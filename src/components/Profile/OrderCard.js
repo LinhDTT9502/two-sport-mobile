@@ -20,7 +20,7 @@ const OrderCard = ({ order, onPress, renderOrderStatusButton, type }) => {
           <Text style={styles.orderStatus}>Trạng thái: {order.orderStatus}</Text>
           <Text style={styles.orderStatus}>Trạng thái thanh toán: {order.paymentStatus}</Text>
           <Text style={styles.orderTotal}>
-            Tổng tiền: {type === 'rent' ? order.subTotal.toLocaleString("vi-VN") : order.totalAmount.toLocaleString("vi-VN")}đ
+            Tổng tiền: {type === 'rent' ? order.subTotal.toLocaleString("vi-VN") : order.totalAmount.toLocaleString("vi-VN")} đ
           </Text>
         </View>
       </View>

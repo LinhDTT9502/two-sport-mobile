@@ -122,7 +122,7 @@ export default function BookmarkList() {
           {item.productName || "Tên sản phẩm không có"}
         </Text>
         <Text style={styles.bookmarkPrice} numberOfLines={1}>
-          {item.price ? `${item.price.toLocaleString()} ₫` : "Giá không có"}
+          {item.price ? `${item.price.toLocaleString("vi-vn")} ₫` : "Giá không có"}
         </Text>
         <TouchableOpacity
           style={styles.removeButton}

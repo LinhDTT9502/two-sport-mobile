@@ -125,7 +125,7 @@ export default function CategoryProduct() {
           {item.productName || item.name}
         </Text>
         <Text style={styles.productPrice}>
-          {item.price.toLocaleString()} ₫
+          {item.price.toLocaleString("vi-vn")} ₫
         </Text>
       </View>
     </TouchableOpacity>

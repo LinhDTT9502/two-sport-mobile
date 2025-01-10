@@ -152,7 +152,7 @@ const HomePage = () => {
           {product.productName || product.name}
         </Text>
         <Text style={styles.productPrice}>
-          {product.price?.toLocaleString() || "N/A"} ₫
+          {product.price?.toLocaleString("vi-vn") || "N/A"} ₫
         </Text>
       </View>
     </TouchableOpacity>

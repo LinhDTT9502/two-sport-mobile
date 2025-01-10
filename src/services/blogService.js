@@ -12,7 +12,7 @@ import {
     //   console.log("API Response:", response);
       return response.data?.data?.$values || []; 
     } catch (error) {
-      console.error('Error fetching all blogs:', error);
+      // console.error('Error fetching all blogs:', error);
       throw error;
     }
   };

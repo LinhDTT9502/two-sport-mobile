@@ -9,7 +9,8 @@ import {
   ScrollView,
   View,
   Image,
-  TextInput, Modal
+  TextInput,
+  Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -20,7 +21,7 @@ import PaymentMethod from "../../components/Payment/PaymentMethod";
 import { Feather } from "@expo/vector-icons";
 import { ModalPayment } from "./PaymentSuccess/ModalPayment";
 import axios from "axios";
-import DatePicker from '@react-native-community/datetimepicker';
+import DatePicker from "@react-native-community/datetimepicker";
 
 function SelectPayment({ route }) {
   const { order } = route.params;
@@ -28,18 +29,17 @@ function SelectPayment({ route }) {
   const [selectedOption, setSelectedOption] = useState("1");
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [modalVisiblePayment, setModalVisiblePayment] = useState(false);
-  const [linkPayment, setLinkPayment] = useState("")
+  const [linkPayment, setLinkPayment] = useState("");
   const [deposit, setDeposit] = useState("DEPOSIT_50");
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState("");
-  const [status, setStatus] = useState("")
+  const [status, setStatus] = useState("");
   const [showExtendedModal, setExtendedShowModal] = useState(false);
   const [selectedChildOrder, setSelectedChildOrder] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  useEffect(() => {
-  }, [status, showExtendedModal]);
+  useEffect(() => {}, [status, showExtendedModal]);
 
   const handleCheck = async () => {
     if (paymentCompleted) {
@@ -52,38 +52,39 @@ function SelectPayment({ route }) {
 
         const data = order.rentalOrderCode
           ? await selectRentalCheckout({
-            paymentMethodID: selectedOption,
-            orderId: order.id,
-            orderCode: order.rentalOrderCode || order.saleOrderCode,
-            ..._d,
-          })
+              paymentMethodID: selectedOption,
+              orderId: order.id,
+              orderCode: order.rentalOrderCode || order.saleOrderCode,
+              ..._d,
+            })
           : await selectCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.saleOrderCode,
-            ..._d,
-          });
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.saleOrderCode,
+              ..._d,
+            });
         setPaymentCompleted(true);
-        navigation.navigate("AfterPayment")
+        navigation.navigate("AfterPayment");
       } else if (selectedOption === "2" || selectedOption === "3") {
         // PayOS or VNPay
-        const data = (order.rentalOrderCode || order.rentalOrderCode === order.saleOrderCode)
-          ? await selectRentalCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderID: order.id,
-            orderCode: order.rentalOrderCode,
-            ..._d,
-          })
-          : await selectCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.saleOrderCode,
-            ..._d,
-          });
+        const data =
+          order.rentalOrderCode || order.rentalOrderCode === order.saleOrderCode
+            ? await selectRentalCheckout({
+                paymentMethodID: parseInt(selectedOption),
+                orderID: order.id,
+                orderCode: order.rentalOrderCode,
+                ..._d,
+              })
+            : await selectCheckout({
+                paymentMethodID: parseInt(selectedOption),
+                orderId: order.id,
+                orderCode: order.saleOrderCode,
+                ..._d,
+              });
 
         if (data?.data?.data?.paymentLink) {
-          setLinkPayment(data.data.data.paymentLink)
-          setModalVisiblePayment(true)
+          setLinkPayment(data.data.data.paymentLink);
+          setModalVisiblePayment(true);
           // Linking.canOpenURL(data.data.data.paymentLink).then((supported) => {
           //   if (supported) {
           //     // Linking.openURL(data.data.data.paymentLink);
@@ -100,19 +101,19 @@ function SelectPayment({ route }) {
         // ]);
       } else if (selectedOption === "4") {
         // Bank Transfer
-        const data = order.rentalOrderCode ?
-          await selectRentalCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.rentalOrderCode || order.saleOrderCode,
-            ..._d,
-          })
+        const data = order.rentalOrderCode
+          ? await selectRentalCheckout({
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.rentalOrderCode || order.saleOrderCode,
+              ..._d,
+            })
           : await selectCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.saleOrderCode,
-            ..._d,
-          });
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.saleOrderCode,
+              ..._d,
+            });
         setPaymentCompleted(true);
         Alert.alert(
           "Thanh toán thành công",
@@ -140,115 +141,111 @@ function SelectPayment({ route }) {
       return;
     }
 
-    Alert.alert(
-      "Xác nhận",
-      "Bạn có chắc chắn muốn hủy đơn hàng này không?",
-      [
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
-        {
-          text: "Xác nhận",
-          onPress: async () => {
-            try {
-              if (order.saleOrderCode) {
-                console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
-                const response = await axios.post(
-                  `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${order.id}?reason=${encodeURIComponent(reason)}`,
-                  null, // No request body
-                  {
-                    headers: {
-                      accept: "*/*",
-                    },
-                  }
-                );
-              } else if (order.rentalOrderCode) {
-                const response = await axios.post(
-                  `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${order.id}?reason=${encodeURIComponent(reason)}`,
-                  null, // No request body
-                  {
-                    headers: {
-                      accept: "*/*",
-                    },
-                  }
-                );
-              }
-
-              setStatus("Đã hủy")
-              Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
-              setShowModal(false);
-              setReason(""); // Reset reason field
-            } catch (error) {
-              console.error("Error cancel order:", error);
-              Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
+    Alert.alert("Xác nhận", "Bạn có chắc chắn muốn hủy đơn hàng này không?", [
+      {
+        text: "Hủy",
+        style: "cancel",
+      },
+      {
+        text: "Xác nhận",
+        onPress: async () => {
+          try {
+            if (order.saleOrderCode) {
+              console.log(
+                `Cancelling sale order ${order.id} with reason: ${reason}`
+              );
+              const response = await axios.post(
+                `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
+                  order.id
+                }?reason=${encodeURIComponent(reason)}`,
+                null, // No request body
+                {
+                  headers: {
+                    accept: "*/*",
+                  },
+                }
+              );
+            } else if (order.rentalOrderCode) {
+              const response = await axios.post(
+                `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
+                  order.id
+                }?reason=${encodeURIComponent(reason)}`,
+                null, // No request body
+                {
+                  headers: {
+                    accept: "*/*",
+                  },
+                }
+              );
             }
-          },
+
+            setStatus("Đã hủy");
+            Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
+            setShowModal(false);
+            setReason(""); // Reset reason field
+          } catch (error) {
+            console.error("Error cancel order:", error);
+            Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleUpdateOrderStatus = async () => {
-    Alert.alert(
-      "Xác nhận",
-      "Bạn đã nhận được hàng?",
-      [
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
-        {
-          text: "Đánh giá",
-          onPress: async () => {
-            try {
-              const newStatus = 5;
-              if (order.saleOrderCode) {
-                console.log(`update sale order ${order.id}`);
-                const response = await axios.put(
-                  `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
-                  null, // No request body
-                  {
-                    headers: {
-                      accept: "*/*",
-                    },
-                  }
-                );
-                if (response.status === 200) {
-                  navigation.navigate("AddReview", { orderId: order.id });
+    Alert.alert("Xác nhận", "Bạn đã nhận được hàng?", [
+      {
+        text: "Hủy",
+        style: "cancel",
+      },
+      {
+        text: "Đánh giá",
+        onPress: async () => {
+          try {
+            const newStatus = 5;
+            if (order.saleOrderCode) {
+              console.log(`update sale order ${order.id}`);
+              const response = await axios.put(
+                `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
+                null, // No request body
+                {
+                  headers: {
+                    accept: "*/*",
+                  },
                 }
+              );
+              if (response.status === 200) {
+                navigation.navigate("AddReview", { orderId: order.id });
               }
-              else if (order.rentalOrderCode) {
-                console.log(`update sale order ${order.id}`);
-                const response = await axios.put(
-                  `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
-                  null, // No request body
-                  {
-                    headers: {
-                      accept: "*/*",
-                    },
-                  }
-                );
-              }
-
-
-              // Alert.alert("2Sport cảm ơn quý khách");
-
-              setStatus("Đã giao hàng")
-            } catch (error) {
-              console.error("Error cancel order:", error);
-              Alert.alert("Lỗi", "Không thể xác nhận.");
+            } else if (order.rentalOrderCode) {
+              console.log(`update sale order ${order.id}`);
+              const response = await axios.put(
+                `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
+                null, // No request body
+                {
+                  headers: {
+                    accept: "*/*",
+                  },
+                }
+              );
             }
-          },
+
+            // Alert.alert("2Sport cảm ơn quý khách");
+
+            setStatus("Đã giao hàng");
+          } catch (error) {
+            console.error("Error cancel order:", error);
+            Alert.alert("Lỗi", "Không thể xác nhận.");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
   const handleDateChange = (event, date) => {
     if (date && new Date(date) > new Date(selectedChildOrder.rentalEndDate)) {
       setSelectedDate(date);
     } else {
-      alert('Please select a date later than the rental end date.');
+      alert("Please select a date later than the rental end date.");
     }
     setShowDatePicker(false);
   };
@@ -262,7 +259,7 @@ function SelectPayment({ route }) {
         return response.data.data.id;
       }
     } catch (error) {
-      console.error('Failed to fetch parent order ID:', error);
+      console.error("Failed to fetch parent order ID:", error);
       throw error;
     }
   };
@@ -272,15 +269,20 @@ function SelectPayment({ route }) {
 
     try {
       if (selectedChildOrder.parentOrderCode) {
-        parentOrderId = await fetchParentOrderId(selectedChildOrder.parentOrderCode);
+        parentOrderId = await fetchParentOrderId(
+          selectedChildOrder.parentOrderCode
+        );
         childOrderId = selectedChildOrder.id;
       } else {
         parentOrderId = selectedChildOrder.id;
       }
 
-      const extensionDays = Math.ceil(
-        (new Date(selectedDate) - new Date(selectedChildOrder.rentalEndDate)) / (1000 * 60 * 60 * 24)
-      ) + 1;
+      const extensionDays =
+        Math.ceil(
+          (new Date(selectedDate) -
+            new Date(selectedChildOrder.rentalEndDate)) /
+            (1000 * 60 * 60 * 24)
+        ) + 1;
 
       const payload = {
         parentOrderId,
@@ -293,25 +295,24 @@ function SelectPayment({ route }) {
         payload,
         {
           headers: {
-            accept: '*/*',
+            accept: "*/*",
           },
         }
       );
 
       if (response.data.isSuccess) {
-        setExtendedShowModal(false)
-        console.log('Request successful:', response);
-        alert('Extension requested successfully!');
+        setExtendedShowModal(false);
+        console.log("Request successful:", response);
+        alert("Extension requested successfully!");
       } else {
-        console.log('Error response:', response.data.message);
+        console.log("Error response:", response.data.message);
         alert(response.data.message);
       }
     } catch (error) {
-      console.error('Request failed:', error.response || error.message);
-      alert('Failed to request extension.');
+      console.error("Request failed:", error.response || error.message);
+      alert("Failed to request extension.");
     }
   };
-
 
   return (
     <View style={styles.container}>
@@ -327,24 +328,51 @@ function SelectPayment({ route }) {
       <View style={styles.buttonReq}>
         {order.orderStatus === "Đã giao cho ĐVVC" && (
           <TouchableOpacity
-            style={[
-              styles.checkoutButton,
-              paymentCompleted && styles.disabledButton,
-            ]}
-            onPress={handleUpdateOrderStatus}
-          >
-            <Text style={styles.checkoutText}>Đã nhận hàng</Text>
-          </TouchableOpacity>
+          style={[
+            {
+              backgroundColor: "#4CAF50",
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+              borderRadius: 8,
+              marginHorizontal: 16,
+              marginTop: 8,
+              elevation: 2,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+            },
+            paymentCompleted && styles.disabledButton,
+          ]}
+          onPress={handleUpdateOrderStatus}
+        >
+          <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+            Đã nhận hàng
+          </Text>
+        </TouchableOpacity>
         )}
-
 
         {order.orderStatus === "Chờ xử lý" && (
           <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => setShowModal(true)}
-          >
-            <Text style={styles.cancelButtonText}>Hủy đơn</Text>
-          </TouchableOpacity>
+          style={{
+            backgroundColor: "#FF4444",
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 8,
+            marginHorizontal: 16,
+            marginTop: 8,
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+          }}
+          onPress={() => setShowModal(true)}
+        >
+          <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+            Hủy đơn
+          </Text>
+        </TouchableOpacity>
         )}
         <Modal
           transparent={true}
@@ -352,29 +380,79 @@ function SelectPayment({ route }) {
           animationType="slide"
           onRequestClose={() => setShowModal(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Xác nhận hủy đơn hàng </Text>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            <View
+              style={{
+                width: "90%",
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 10,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  marginBottom: 10,
+                  color: "#333",
+                }}
+              >
+                Xác nhận hủy đơn hàng
+              </Text>
               <TextInput
-                style={styles.textInput}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 5,
+                  padding: 10,
+                  minHeight: 60,
+                  textAlignVertical: "top",
+                  marginBottom: 20,
+                }}
                 placeholder="Vui lòng nhập lý do hủy đơn hàng"
                 value={reason}
                 onChangeText={setReason}
                 multiline
               />
-
-              <View style={styles.modalActions}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                }}
+              >
                 <TouchableOpacity
-                  style={styles.closeButton}
+                  style={{
+                    backgroundColor: "#CCC",
+                    paddingVertical: 8,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                  }}
                   onPress={() => setShowModal(false)}
                 >
-                  <Text style={styles.closeButtonText}>Đóng</Text>
+                  <Text style={{ color: "#333", fontSize: 16 }}>Đóng</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.confirmButton}
+                  style={{
+                    backgroundColor: "red",
+                    paddingVertical: 8,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                  }}
                   onPress={handleCancelOrder}
                 >
-                  <Text style={styles.confirmButtonText}>Xác nhận</Text>
+                  <Text
+                    style={{ color: "#FFF", fontSize: 16, fontWeight: "bold" }}
+                  >
+                    Xác nhận
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -396,18 +474,23 @@ function SelectPayment({ route }) {
             />
             <InfoItem icon="map-pin" label="Địa chỉ" value={order.address} />
             <InfoItem label="Tình trạng" value={status || order.orderStatus} />
-            <InfoItem label="Trạng thái thanh toán" value={order.paymentStatus} />
+            <InfoItem
+              label="Trạng thái thanh toán"
+              value={order.paymentStatus}
+            />
           </View>
         </View>
 
         {/* Order Details */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tóm tắt đơn hàng: {order.saleOrderCode || order.rentalOrderCode} </Text>
+          <Text style={styles.sectionTitle}>
+            Tóm tắt đơn hàng: {order.saleOrderCode || order.rentalOrderCode}{" "}
+          </Text>
           <View style={styles.card}>
             {(data?.length > 0 ? data : [order]).map((item, index) => {
               const _item = { ...item };
-              console.log("thang con"+ item)
-              console.log( _item)
+              console.log("thang con" + item);
+              console.log(_item);
 
               return (
                 <View
@@ -452,29 +535,61 @@ function SelectPayment({ route }) {
                   </View>
                   <View>
                     {item?.rentalStartDate ? (
-                      <Text>Ngày bắt đầu thuê: {item?.rentalStartDate}</Text>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: "#333",
+                          fontWeight: "bold",
+                          marginVertical: 5,
+                        }}
+                      >
+                        Ngày bắt đầu thuê:{" "}
+                        {new Date(item?.rentalStartDate).toLocaleDateString()}
+                      </Text>
                     ) : null}
                     {item?.rentalEndDate ? (
-                      <Text>Ngày bắt đầu thuê: {item?.rentalEndDate}</Text>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: "#333",
+                          fontWeight: "bold",
+                          marginBottom: 10,
+                        }}
+                      >
+                        Ngày kết thúc thuê:{" "}
+                        {new Date(item?.rentalEndDate).toLocaleDateString()}
+                      </Text>
                     ) : null}
                   </View>
-                  {order.rentalOrderCode && (order.orderStatus === "Đang thuê" && _item.extensionStatus === "N/A") && (
-                    <TouchableOpacity
-                      style={[
-                        styles.checkoutButton,
-                        paymentCompleted && styles.disabledButton,
-                      ]}
-                      onPress={() => {
-                        setSelectedChildOrder(_item);
-                        setExtendedShowModal(true);
-                      }}
-                    >
-                      <Text style={styles.checkoutText}>Yêu cầu gia hạn 
-                    
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
+                  {order.rentalOrderCode &&
+                    order.orderStatus === "Đang thuê" &&
+                    _item.extensionStatus === "N/A" && (
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: "#3366FF",
+                          paddingVertical: 12,
+                          paddingHorizontal: 20,
+                          borderRadius: 8,
+                          marginTop: 10,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                        onPress={() => {
+                          setSelectedChildOrder(item);
+                          setExtendedShowModal(true);
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#FFF",
+                            fontSize: 16,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          Yêu cầu gia hạn
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                 </View>
               );
             })}
@@ -494,59 +609,117 @@ function SelectPayment({ route }) {
           </View>
         </View>
         {/*modal extend */}
-        {showExtendedModal &&
+        {showExtendedModal && (
           <Modal
             transparent={true}
             visible={showExtendedModal}
             animationType="slide"
             onRequestClose={() => setExtendedShowModal(false)}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Chọn thời gian gia hạn </Text>
-               {/* chọn ngày gia hạn */}
-               <TouchableOpacity
-              style={styles.datePickerButton}
-              onPress={() => setShowDatePicker(true)}
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+              }}
             >
-              <Text style={styles.datePickerText}>
-                {selectedDate
-                  ? selectedDate.toLocaleDateString()
-                  : 'Select a date'}
-              </Text>
-            </TouchableOpacity>
+              <View
+                style={{
+                  width: "90%",
+                  backgroundColor: "#FFF",
+                  borderRadius: 12,
+                  padding: 20,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: "#333",
+                    marginBottom: 10,
+                  }}
+                >
+                  Chọn thời gian gia hạn
+                </Text>
+                {/* Nút chọn ngày */}
+                <TouchableOpacity
+                  style={{
+                    padding: 10,
+                    borderWidth: 1,
+                    borderColor: "#CCC",
+                    borderRadius: 5,
+                    marginBottom: 20,
+                  }}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={{ textAlign: "center", color: "#555" }}>
+                    {selectedDate
+                      ? selectedDate.toLocaleDateString()
+                      : "Chọn ngày"}
+                  </Text>
+                </TouchableOpacity>
 
-            {showDatePicker && (
-              <DatePicker
-                value={selectedDate || new Date(selectedChildOrder.rentalEndDate)}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-                minimumDate={new Date(selectedChildOrder.rentalEndDate)}
-              />
-            )}
-                <View style={styles.modalActions}>
+                {showDatePicker && (
+                  <DatePicker
+                    value={
+                      selectedDate || new Date(selectedChildOrder.rentalEndDate)
+                    }
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                    minimumDate={new Date(selectedChildOrder.rentalEndDate)}
+                  />
+                )}
+
+                {/* Nút hành động */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    marginTop: 10,
+                  }}
+                >
                   <TouchableOpacity
-                    style={styles.closeButton}
+                    style={{
+                      padding: 10,
+                      backgroundColor: "#CCC",
+                      borderRadius: 5,
+                      marginRight: 10,
+                    }}
                     onPress={() => setExtendedShowModal(false)}
                   >
-                    <Text style={styles.closeButtonText}>Đóng</Text>
+                    <Text style={{ color: "#333", fontSize: 16 }}>Đóng</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.confirmButton}
+                    style={{
+                      padding: 10,
+                      backgroundColor: "#3366FF",
+                      borderRadius: 5,
+                    }}
                     onPress={handleExtension}
                   >
-                    <Text style={styles.confirmButtonText}>Xác nhận</Text>
+                    <Text
+                      style={{
+                        color: "#FFF",
+                        fontSize: 16,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Xác nhận
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
           </Modal>
-        }
+        )}
+
         {/* Payment Method */}
         {order?.rentalOrderCode ? (
           <>
-            {(order.orderStatus !== "Đã hủy" || status === "Đã hủy") && order?.depositStatus === "N/A" ? (
+            {(order.orderStatus !== "Đã hủy" || status === "Đã hủy") &&
+            order?.depositStatus === "N/A" ? (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đặt cọc</Text>
                 {[
@@ -566,21 +739,26 @@ function SelectPayment({ route }) {
                         <Text
                           style={[
                             styles.optionText,
-                            selectedOption === item.value && styles.selectedOptionText,
+                            selectedOption === item.value &&
+                              styles.selectedOptionText,
                             paymentCompleted && styles.disabledOptionText,
                           ]}
                         >
                           {item.title}
                         </Text>
                       </View>
-                      {!order?.depositStatus || order?.depositStatus === "N/A" ? (
+                      {!order?.depositStatus ||
+                      order?.depositStatus === "N/A" ? (
                         <View
                           style={[
                             styles.radioButton,
-                            deposit === item.value && styles.selectedRadioButton,
+                            deposit === item.value &&
+                              styles.selectedRadioButton,
                           ]}
                         >
-                          {deposit === item.value && <View style={styles.selectedDot} />}
+                          {deposit === item.value && (
+                            <View style={styles.selectedDot} />
+                          )}
                         </View>
                       ) : null}
                     </TouchableOpacity>
@@ -590,7 +768,9 @@ function SelectPayment({ route }) {
             ) : order?.depositStatus !== "N/A" ? (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đơn hàng đã đặt cọc</Text>
-                <Text style={styles.depositText}>Số tiền:{order.depositAmount}</Text>
+                <Text style={styles.depositText}>
+                  Số tiền:{order.depositAmount}
+                </Text>
               </View>
             ) : null}
           </>
@@ -598,45 +778,66 @@ function SelectPayment({ route }) {
           <View></View>
         )}
 
-        {(order.paymentStatus !== "Đã thanh toán" && order.paymentStatus !== "Đã đặt cọc") && order.orderStatus !== "Đã hủy" && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
-            <PaymentMethod
-              selectedOption={selectedOption || order.paymentMethodID}
-              setSelectedOption={setSelectedOption}
-              paymentCompleted={paymentCompleted}
-              order={order}
-            />
-            {!order?.paymentMethodId && (
-              <TouchableOpacity
-                style={[
-                  styles.checkoutButton,
-                  paymentCompleted && styles.disabledButton,
-                ]}
-                onPress={handleCheck}
-                disabled={paymentCompleted}
-              >
-                <Text style={styles.checkoutText}>Xác nhận thanh toán</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
+        {order.paymentStatus !== "Đã thanh toán" &&
+          order.paymentStatus !== "Đã đặt cọc" &&
+          order.orderStatus !== "Đã hủy" && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
+              <PaymentMethod
+                selectedOption={selectedOption || order.paymentMethodID}
+                setSelectedOption={setSelectedOption}
+                paymentCompleted={paymentCompleted}
+                order={order}
+              />
+              {!order?.paymentMethodId && (
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#3366FF",
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    alignSelf: "flex-end",
+                    marginTop: 10,
+                    marginRight: 10,
+                  }}
+                  onPress={handleCheck}
+                >
+                  <Text
+                    style={{ color: "#FFF", fontSize: 16, fontWeight: "bold" }}
+                  >
+                    Xác nhận thanh toán
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
       </ScrollView>
 
-      <ModalPayment isVisible={modalVisiblePayment} onClose={() => {
-        setLinkPayment('')
-        setModalVisiblePayment(false)
-      }} link={linkPayment} onSuccess={() => {
-        setLinkPayment('')
-        setModalVisiblePayment(false)
-        setPaymentCompleted(true)
-        Alert.alert(
-          "Thanh toán thành công",
-          "Bạn đã xác nhận thanh toán đơn hàng thành công.",
-          [{ text: "OK", onPress: () => navigation.navigate("HomeController") }]
-        );
-      }} />
+      <ModalPayment
+        isVisible={modalVisiblePayment}
+        onClose={() => {
+          setLinkPayment("");
+          setModalVisiblePayment(false);
+        }}
+        link={linkPayment}
+        onSuccess={() => {
+          setLinkPayment("");
+          setModalVisiblePayment(false);
+          setPaymentCompleted(true);
+          Alert.alert(
+            "Thanh toán thành công",
+            "Bạn đã xác nhận thanh toán đơn hàng thành công.",
+            [
+              {
+                text: "OK",
+                onPress: () => navigation.navigate("HomeController"),
+              },
+            ]
+          );
+        }}
+      />
     </View>
   );
 }
@@ -700,6 +901,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
+    marginTop : 10,
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
@@ -812,15 +1014,15 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderRadius: 5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     marginBottom: 20,
   },
   datePickerText: {
-    textAlign: 'center',
-    color: '#555',
+    textAlign: "center",
+    color: "#555",
   },
   disabledButton: {
-    backgroundColor: "#A0AEC0",
+    opacity: 0.5,
   },
   checkoutText: {
     fontSize: 18,
@@ -900,7 +1102,13 @@ const styles = StyleSheet.create({
   },
   buttonReq: {
     flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingVertical: 8,
+    backgroundColor: "#FFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
   },
+
   detailsContainer: {
     backgroundColor: "#F9FAFC",
     padding: 20,
@@ -947,18 +1155,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
   },
-  cancelButton: {
-    backgroundColor: "red",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  cancelButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+
   modalOverlay: {
     flex: 1,
     justifyContent: "center",

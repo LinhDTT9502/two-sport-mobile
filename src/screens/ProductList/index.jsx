@@ -281,7 +281,7 @@ export default function ProductListing() {
             {item.categoryName}
           </Text>
           <Text style={styles.productPrice}>
-            {price !== "N.A" ? `${parseInt(price).toLocaleString()} ₫` : "N.A"}
+            {price !== "N.A" ? `${parseInt(price).toLocaleString("vi-vn")} ₫` : "N.A"}
           </Text>
           {token && (
             <BookmarkComponent

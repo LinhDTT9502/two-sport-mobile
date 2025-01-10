@@ -233,6 +233,12 @@ export default function Cart() {
     navigation.navigate("PlacedOrder", { selectedCartItems, type: "rent" });
   };
 
+const hasNonRentableItems = selectedItems.some((id) => {
+  const item = cartItems.find((cartItem) => cartItem.cartItemId === id || cartItem.id === id);
+  return item && item.rentPrice === 0; 
+});
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
@@ -253,7 +259,11 @@ export default function Cart() {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {cartItems?.length === 0 && (
             <View style={styles.emptyCartContainer}>
-              <FontAwesome name="shopping-cart" size={120} color={COLORS.gray} />
+              <FontAwesome
+                name="shopping-cart"
+                size={120}
+                color={COLORS.gray}
+              />
               <Text style={styles.emptyCartText}>Chưa có đơn hàng nào</Text>
             </View>
           )}
@@ -345,9 +355,10 @@ export default function Cart() {
                           <TextInput
                             style={{
                               backgroundColor: "white",
+                              textAlgin: "center",
                               width: 26,
                               border: "none",
-                              height: 28,
+                              height: 34,
                               borderRadius: 4,
                               paddingHorizontal: 4,
                             }}
@@ -377,31 +388,50 @@ export default function Cart() {
                           </TouchableOpacity>
                         </View>
                       </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          gap: 4,
-                          alignItems: "center",
-                        }}
-                      >
-                        {/* <Text>Tổng: </Text>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 4,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text>Tổng: </Text>
                       <Text style={styles.itemPrice}>
                         {formatCurrency(item.price * item.quantity)}
-                      </Text> */}
-                      </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          gap: 4,
-                          alignItems: "center",
-                        }}
-                      >
-                        <Text>Tổng: </Text>
-                        <Text style={styles.itemPrice}>
-                          {formatCurrency(item.price * item.quantity)}
-                        </Text>
-                      </View>
+                      </Text>
                     </View>
+                    <View
+  style={{
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 5,
+  }}
+>
+  <Text
+    style={{
+      fontSize: 16,
+      fontWeight: "bold",
+      color: "#333",  
+    }}
+  >
+    Giá thuê:
+  </Text>
+  <Text
+    style={{
+      fontSize: 16,
+      fontWeight: "600",
+      color: item.rentPrice !== 0 ? "#FF5722" : "#666",
+      marginLeft: 5, 
+    }}
+  >
+    {item.rentPrice !== 0
+      ? item.rentPrice.toLocaleString("vi-VN") + "₫"
+      : "Sản phẩm chỉ bán"}
+  </Text>
+</View>
+
+                    
                   </View>
                 </View>
               );
@@ -409,48 +439,48 @@ export default function Cart() {
         </ScrollView>
 
         {cartItems && cartItems.length > 0 && (
-          <View style={styles.bottomNav}>
-            <TouchableOpacity
-              style={styles.selectAllContainer}
-              onPress={handleSelectAll}
-            >
-              <View
-                style={[styles.checkbox, selectAll && styles.checkboxSelected]}
-              >
-                {selectAll && (
-                  <Ionicons name="checkmark" size={16} color={COLORS.white} />
-                )}
-              </View>
-              <Text style={styles.selectAllText}>Chọn tất cả</Text>
-            </TouchableOpacity>
-            <View style={styles.totalContainer}>
-              <Text style={styles.totalText}>Tổng cộng:</Text>
-              <Text style={styles.totalAmount}>
-                {formatCurrency(parseFloat(calculateTotal()))}
-              </Text>
-            </View>
-            <View style={styles.actionButtonsContainer}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.buyNowButton]}
-                onPress={handleBuyNow}
-              >
-                <FontAwesome
-                  name="shopping-bag"
-                  size={20}
-                  color={COLORS.white}
-                />
-                <Text style={styles.actionButtonText}>Mua ngay</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.rentButton]}
-                onPress={handleRent}
-              >
-                <FontAwesome name="calendar" size={20} color={COLORS.white} />
-                <Text style={styles.actionButtonText}>Thuê</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+  <View style={styles.bottomNav}>
+    <TouchableOpacity
+      style={styles.selectAllContainer}
+      onPress={handleSelectAll}
+    >
+      <View style={[styles.checkbox, selectAll && styles.checkboxSelected]}>
+        {selectAll && (
+          <Ionicons name="checkmark" size={16} color={COLORS.white} />
         )}
+      </View>
+      <Text style={styles.selectAllText}>Chọn tất cả</Text>
+    </TouchableOpacity>
+    <View style={styles.totalContainer}>
+      <Text style={styles.totalText}>Tổng cộng:</Text>
+      <Text style={styles.totalAmount}>
+        {formatCurrency(parseFloat(calculateTotal()))}
+      </Text>
+    </View>
+    <View style={styles.actionButtonsContainer}>
+      <TouchableOpacity
+        style={[styles.actionButton, styles.buyNowButton]}
+        onPress={handleBuyNow}
+      >
+        <FontAwesome name="shopping-bag" size={20} color={COLORS.white} />
+        <Text style={styles.actionButtonText}>Mua ngay</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.actionButton,
+          styles.rentButton,
+          hasNonRentableItems && { backgroundColor: COLORS.gray },
+        ]}
+        onPress={handleRent}
+        disabled={hasNonRentableItems}
+      >
+        <FontAwesome name="calendar" size={20} color={COLORS.white} />
+        <Text style={styles.actionButtonText}>Thuê</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
+
       </View>
     </SafeAreaView>
   );

@@ -17,12 +17,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import OrderCard from "../../components/Profile/OrderCard";
 import StatusTabs from "../../components/Profile/StatusTabs";
-import { selectGuestOrders, selectGuestRentalOrders } from "../../redux/slices/guestOrderSlice";
+import {
+  selectGuestOrders,
+  selectGuestRentalOrders,
+} from "../../redux/slices/guestOrderSlice";
 import { getListRent } from "../../api/apiRent";
 import { selectUser } from "../../redux/slices/authSlice";
 
 const MyOrder = ({ route }) => {
-  const { type } = route.params
+  const { type } = route.params;
   const user = useSelector(selectUser);
   const navigation = useNavigation();
   const guestOrders = useSelector(selectGuestOrders) || [];
@@ -31,26 +34,43 @@ const MyOrder = ({ route }) => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [isProductModalOpen, setProductModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [sort, setSort] = useState('asc')
+  const [sort, setSort] = useState("asc");
   const statusList = [
     { label: "Tất cả", value: "Tất cả" },
-    { label: "Đang chờ", value: "PENDING" },
-    { label: "Đã xác nhận", value: "CONFIRMED" },
-    { label: "Đã thanh toán", value: "PAID" },
-    { label: "Đang đóng gói", value: "PACKING" },
-    { label: "Đang vận chuyển", value: "SHIPPING" },
-    { label: "Thành công", value: "SUCCESS" },
-    { label: "Tạm hoãn", value: "ON_HOLD" },
+    { label: "Chờ xử lý", value: "Chờ xử lý" },
+    { label: "Đã xác nhận", value: "Đã xác nhận" },
+    { label: "Đã giao cho ĐVVC", value: "Đã giao cho ĐVVC" },
+
+    { label: "Đã hoàn thành", value: "Đã hoàn thành" },
+
+    { label: "Đã hủy", value: "Đã hủy" },
   ];
+
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchOrders();
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể làm mới danh sách đơn hàng.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const openProductModal = (product) => {
     // setSelectedProduct(product);
     // setProductModalOpen(true);
     navigation.navigate("SelectPayment", {
-      order: { ...product, children: orders?.filter(item => item?.parentOrderCode === product.rentalOrderCode) },
-    })
+      order: {
+        ...product,
+        children: orders?.filter(
+          (item) => item?.parentOrderCode === product.rentalOrderCode
+        ),
+      },
+    });
   };
 
   const closeProductModal = () => setProductModalOpen(false);
@@ -60,14 +80,16 @@ const MyOrder = ({ route }) => {
       setIsLoading(true);
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        const ordersData = type === 'rent' ? guestRentals : guestOrders
-        setOrders(type === 'rent' ? ordersData?.data?.data?.['$values']?.sort((a, b) => {
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        }) || [] : ordersData);
+        const ordersData = type === "rent" ? guestRentals : guestOrders;
+        setOrders(
+          type === "rent"
+            ? ordersData?.data?.data?.["$values"]?.sort((a, b) => {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+              }) || []
+            : ordersData
+        );
         console.log(ordersData);
-
       } else {
-
         let userId = user?.UserId;
         if (!userId) {
           userId = await AsyncStorage.getItem("userId");
@@ -77,10 +99,17 @@ const MyOrder = ({ route }) => {
           throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
         }
 
-        const ordersData = type === 'rent' ? await getListRent(userId, token) : await fetchUserOrders(userId, token);
-        setOrders(type === 'rent' ? ordersData?.data?.data?.['$values']?.sort((a, b) => {
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        }) || [] : ordersData);
+        const ordersData =
+          type === "rent"
+            ? await getListRent(userId, token)
+            : await fetchUserOrders(userId, token);
+        setOrders(
+          type === "rent"
+            ? ordersData?.data?.data?.["$values"]?.sort((a, b) => {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+              }) || []
+            : ordersData
+        );
       }
     } catch (err) {
       console.error("Error loading orders:", err);
@@ -136,13 +165,21 @@ const MyOrder = ({ route }) => {
         >
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            flex: 1,
+          }}
+        >
           <Text style={styles.headerTitle}>Trạng thái đơn hàng</Text>
           <TouchableOpacity
-            onPress={() => setSort(pre => pre === 'asc' ? 'desc' : 'asc')}
+            onPress={() => setSort((pre) => (pre === "asc" ? "desc" : "asc"))}
             style={styles.backButton}
           >
-            <Text style={styles.headerTitle}>{sort === 'asc' ? 'Mới nhất' : 'Cũ nhất'}</Text>
+            <Text style={styles.headerTitle}>
+              {sort === "asc" ? "Mới nhất" : "Cũ nhất"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -161,21 +198,25 @@ const MyOrder = ({ route }) => {
         <Text style={styles.errorText}>{error}</Text>
       ) : orders?.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <Text style={{ color: '#333', fontSize: 16 }}>Không có sản phẩm</Text>
+          <Text style={{ color: "#333", fontSize: 16 }}>Không có sản phẩm</Text>
         </View>
       ) : (
         <FlatList
           data={filteredOrders?.sort((a, b) => {
-            if (sort === 'asc') {
-              return new Date(b.createdAt) - new Date(a.createdAt)
+            if (sort === "asc") {
+              return new Date(b.createdAt) - new Date(a.createdAt);
             }
-            return new Date(a.createdAt) - new Date(b.createdAt)
+            return new Date(a.createdAt) - new Date(b.createdAt);
           })}
           keyExtractor={(item) =>
-            item?.orderId?.toString() || item?.cartItemId?.toString() || item?.id
+            item?.orderId?.toString() ||
+            item?.cartItemId?.toString() ||
+            item?.id
           }
           renderItem={renderOrderItem}
           contentContainerStyle={styles.orderList}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
         />
       )}
 

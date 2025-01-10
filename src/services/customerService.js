@@ -5,7 +5,7 @@ export const fetchCustomerLoyalPoints = async (userId) => {
     const response = await getCustomerLoyalPoints(userId);
     return response.data.data; 
   } catch (error) {
-    console.error('Error fetching all blogs:', error);
+    // console.error('Error fetching all blogs:', error);
     throw error;
   }
 };

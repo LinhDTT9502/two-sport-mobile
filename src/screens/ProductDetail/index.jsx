@@ -236,7 +236,7 @@ export default function ProductDetail() {
           productId: matchingProduct?.id,
         }));
       } else {
-        setTotalPrice("Hết hàng");
+        setTotalPrice();
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật giá sản phẩm:", error);
@@ -485,7 +485,7 @@ export default function ProductDetail() {
   };
 
   const formatCurrency = (amount) => {
-    return amount.toLocaleString();
+    return amount.toLocaleString("vi-vn");
   };
 
   const renderItem = ({ item }) => (
@@ -530,7 +530,7 @@ export default function ProductDetail() {
             <Text style={styles.productName}>
               {product.productName || "Tên sản phẩm không có"}
             </Text>
-            <BookmarkComponent
+            {/* <BookmarkComponent
               item={{
                 id: product.id,
                 title: product.title,
@@ -541,7 +541,7 @@ export default function ProductDetail() {
               style={{ marginLeft: 16 }}
               iconSize={24}
               color="#FF9900"
-            />
+            /> */}
           </View>
           <View style={styles.priceContainer}>
             <View>
@@ -562,11 +562,12 @@ export default function ProductDetail() {
             </View>
 
             <LikeButton
-              isLiked={isLiked}
-              likes={likes}
-              onPress={handleLikeToggle}
-              disabled={loadingLike}
-            />
+  productId={productId}
+  productCode={product.productCode}
+  initialLikes={likes}
+  isLikedInitially={isLiked}
+/>
+
           </View>
 
           <View style={styles.priceContainer}>
@@ -891,7 +892,7 @@ export default function ProductDetail() {
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
         </TouchableOpacity>
-        <Text style={styles.title}>Giỏ hàng của bạn</Text>
+        <Text style={styles.title}>Chi tiết sản phẩm</Text>
         <TouchableOpacity style={styles.cartIconContainer}>
           <Ionicons
             onPress={() => navigation.navigate("Cart")}
@@ -916,11 +917,27 @@ export default function ProductDetail() {
 
       <View style={styles.bottomNav}>
         <View style={styles.buyNowContainer}>
-          <BuyNowButton onPress={() => handleAddToCart("buy")} />
+        <BuyNowButton
+      onPress={() => handleAddToCart("buy")}
+      disabled={
+        totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
+        !selectedColor ||
+        !selectedSize ||
+        !selectedCondition
+      }
+    />
         </View>
         {product?.isRent ? (
           <View style={styles.rentContainer}>
-            <RentButton onPress={() => handleAddToCart("rent")} />
+            <RentButton
+        onPress={() => handleAddToCart("rent")}
+        disabled={
+          totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
+          !selectedColor ||
+          !selectedSize ||
+          !selectedCondition
+        }
+      />
           </View>
         ) : null}
       </View>

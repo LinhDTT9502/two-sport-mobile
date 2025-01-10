@@ -107,7 +107,7 @@ export default function Account() {
 
         <View style={styles.profileSection}>
           <Text style={styles.profileName}>{user.FullName}</Text>
-          {/* <Text style={styles.profileId}>Mã tài khoản: {user.UserId}</Text> */}
+          <Text style={styles.profileId}>Mã tài khoản: {user.UserId}</Text>
           <LoyalPoint userId={user.UserId} />
         </View>
       

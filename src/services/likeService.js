@@ -1,12 +1,11 @@
-import { getLikesAPI, toggleLikeProductAPI } from "../api/apiLike";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getLikesAPI, toggleLikeProductAPI } from "../api/apiLike";
 
-// Hàm lấy token
-const getToken = async () => {
+const getToken = () => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const token = AsyncStorage.getItem("token");
     if (!token) {
-      // console.warn("Token not found");
+      console.warn("Token not found");
       return null;
     }
     return token;
@@ -16,25 +15,26 @@ const getToken = async () => {
   }
 };
 
-export const fetchLikes = async () => {
+// Hàm lấy số lượt like của sản phẩm
+export const fetchLikes = async (productCode) => {
   try {
-    const response = await getLikesAPI();
-    return response.data;
+    const response = await getLikesAPI(productCode); 
+    return response.data; 
   } catch (error) {
     console.error("Error fetching likes:", error);
-    throw error;
+    throw error; 
   }
 };
 
-export const handleToggleLike = async (productId) => {
+export const handleToggleLike = async (productCode) => {
   try {
     const token = await getToken();
     if (!token) {
-      // console.warn("Cannot like product. User is not logged in.");
+      console.warn("Cannot like product. User is not logged in.");
       return;
     }
-    const response = await toggleLikeProductAPI(productId, token);
-    return response.data;
+    const response = await toggleLikeProductAPI(productCode, token); 
+    return response.data; 
   } catch (error) {
     console.error("Error toggling like:", error);
     throw error;
