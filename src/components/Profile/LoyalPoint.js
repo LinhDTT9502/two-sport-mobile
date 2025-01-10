@@ -16,7 +16,7 @@ export default function LoyalPoint({ userId }) {
           setLoyalPoints(points.loyaltyPoints);
           setLevel(points.membershipLevel);
         } catch (error) {
-          console.error("Error fetching loyalty points:", error);
+          // console.error("Error fetching loyalty points:", error);
         } finally {
           setLoading(false);
         }

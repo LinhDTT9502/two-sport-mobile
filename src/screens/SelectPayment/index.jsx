@@ -23,6 +23,27 @@ import { ModalPayment } from "./PaymentSuccess/ModalPayment";
 import axios from "axios";
 import DatePicker from "@react-native-community/datetimepicker";
 
+const statusColors = {
+  "Chờ xử lý": "bg-yellow-100 text-yellow-800",
+  "Đã xác nhận": "bg-orange-100 text-orange-800",
+  "Đang xử lý": "bg-purple-100 text-purple-800",
+  "Đã giao hàng": "bg-indigo-100 text-indigo-800",
+  "Đã giao cho ĐVVC": "bg-blue-100 text-blue-800",
+  "Đã hủy": "bg-red-200 text-red-900",
+  "Đã hoàn thành": "bg-green-100 text-green-800",
+  "Đã thanh toán": "bg-green-100 text-green-800",
+
+  "Bị trì hoãn": "bg-red-100 text-red-800",
+  "Đã xác nhận đơn": "bg-blue-100 text-blue-800",
+};
+
+const paymentStatusColors = {
+  "Đang chờ thanh toán": "text-yellow-800",
+  "Đã đặt cọc": "text-blue-800",
+  "Đã thanh toán": "text-green-800",
+  "Đã hủy": "text-red-800",
+};
+
 function SelectPayment({ route }) {
   const { order } = route.params;
   const navigation = useNavigation();
@@ -141,57 +162,44 @@ function SelectPayment({ route }) {
       return;
     }
 
-    Alert.alert("Xác nhận", "Bạn có chắc chắn muốn hủy đơn hàng này không?", [
-      {
-        text: "Hủy",
-        style: "cancel",
-      },
-      {
-        text: "Xác nhận",
-        onPress: async () => {
-          try {
-            if (order.saleOrderCode) {
-              console.log(
-                `Cancelling sale order ${order.id} with reason: ${reason}`
-              );
-              const response = await axios.post(
-                `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
-                  order.id
-                }?reason=${encodeURIComponent(reason)}`,
-                null, // No request body
-                {
-                  headers: {
-                    accept: "*/*",
-                  },
-                }
-              );
-            } else if (order.rentalOrderCode) {
-              const response = await axios.post(
-                `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
-                  order.id
-                }?reason=${encodeURIComponent(reason)}`,
-                null, // No request body
-                {
-                  headers: {
-                    accept: "*/*",
-                  },
-                }
-              );
-            }
-
-            setStatus("Đã hủy");
-            Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
-            setShowModal(false);
-            setReason(""); // Reset reason field
-          } catch (error) {
-            console.error("Error cancel order:", error);
-            Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
+    try {
+      if (order.saleOrderCode) {
+        console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
+        const response = await axios.post(
+          `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
+            order.id
+          }?reason=${encodeURIComponent(reason)}`,
+          null, // No request body
+          {
+            headers: {
+              accept: "*/*",
+            },
           }
-        },
-      },
-    ]);
-  };
+        );
+      } else if (order.rentalOrderCode) {
+        const response = await axios.post(
+          `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
+            order.id
+          }?reason=${encodeURIComponent(reason)}`,
+          null, // No request body
+          {
+            headers: {
+              accept: "*/*",
+            },
+          }
+        );
+      }
 
+      setStatus("Đã hủy");
+      setReason("");
+      setShowModal(false); 
+      Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
+
+    } catch (error) {
+      console.error("Error cancel order:", error);
+      Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
+    }
+  };
   const handleUpdateOrderStatus = async () => {
     Alert.alert("Xác nhận", "Bạn đã nhận được hàng?", [
       {
@@ -199,7 +207,7 @@ function SelectPayment({ route }) {
         style: "cancel",
       },
       {
-        text: "Đánh giá",
+        text: "Xác nhận",
         onPress: async () => {
           try {
             const newStatus = 5;
@@ -328,9 +336,34 @@ function SelectPayment({ route }) {
       <View style={styles.buttonReq}>
         {order.orderStatus === "Đã giao cho ĐVVC" && (
           <TouchableOpacity
-          style={[
-            {
-              backgroundColor: "#4CAF50",
+            style={[
+              {
+                backgroundColor: "#4CAF50",
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 8,
+                marginHorizontal: 16,
+                marginTop: 8,
+                elevation: 2,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+              },
+              paymentCompleted && styles.disabledButton,
+            ]}
+            onPress={handleUpdateOrderStatus}
+          >
+            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+              Đã nhận hàng
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {order.orderStatus === "Chờ xử lý" && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#FF4444",
               paddingVertical: 12,
               paddingHorizontal: 20,
               borderRadius: 8,
@@ -341,38 +374,13 @@ function SelectPayment({ route }) {
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.1,
               shadowRadius: 4,
-            },
-            paymentCompleted && styles.disabledButton,
-          ]}
-          onPress={handleUpdateOrderStatus}
-        >
-          <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
-            Đã nhận hàng
-          </Text>
-        </TouchableOpacity>
-        )}
-
-        {order.orderStatus === "Chờ xử lý" && (
-          <TouchableOpacity
-          style={{
-            backgroundColor: "#FF4444",
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            borderRadius: 8,
-            marginHorizontal: 16,
-            marginTop: 8,
-            elevation: 2,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-          }}
-          onPress={() => setShowModal(true)}
-        >
-          <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
-            Hủy đơn
-          </Text>
-        </TouchableOpacity>
+            }}
+            onPress={() => setShowModal(true)}
+          >
+            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+              Hủy đơn
+            </Text>
+          </TouchableOpacity>
         )}
         <Modal
           transparent={true}
@@ -464,33 +472,64 @@ function SelectPayment({ route }) {
         {/* Customer Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
-          <View style={styles.card}>
-            <InfoItem icon="user" label="Tên" value={order.fullName} />
-            <InfoItem icon="mail" label="Email" value={order.email} />
-            <InfoItem
-              icon="phone"
-              label="Số điện thoại"
-              value={order.contactPhone}
-            />
-            <InfoItem icon="map-pin" label="Địa chỉ" value={order.address} />
-            <InfoItem label="Tình trạng" value={status || order.orderStatus} />
-            <InfoItem
-              label="Trạng thái thanh toán"
-              value={order.paymentStatus}
-            />
+          <View style={[styles.card, styles.cardWithShadow]}>
+            <View style={styles.infoRow}>
+              <Feather name="user" size={18} color="#333" />
+              <Text style={styles.infoLabel}>Tên:</Text>
+              <Text style={styles.infoValue}>{order.fullName}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Feather name="mail" size={18} color="#333" />
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>{order.email}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Feather name="phone" size={18} color="#333" />
+              <Text style={styles.infoLabel}>Số điện thoại:</Text>
+              <Text style={styles.infoValue}>{order.contactPhone}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Feather name="map-pin" size={18} color="#333" />
+              <Text style={styles.infoLabel}>Địa chỉ:</Text>
+              <Text style={styles.infoValue}>{order.address}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Feather name="tag" size={18} color="#333" />
+              <Text style={styles.infoLabel}>Tình trạng:</Text>
+              <Text
+                style={[
+                  styles.statusValue,
+                  styles[statusColors[status || order.orderStatus]],
+                ]}
+              >
+                {status || order.orderStatus}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Feather name="credit-card" size={18} color="#333" />
+              <Text style={styles.infoLabel}>Trạng thái thanh toán:</Text>
+              <Text
+                style={[
+                  styles.paymentStatusValue,
+                  styles[paymentStatusColors[order.paymentStatus]],
+                ]}
+              >
+                {order.paymentStatus}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Order Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Tóm tắt đơn hàng: {order.saleOrderCode || order.rentalOrderCode}{" "}
+            Tóm tắt đơn hàng: #{order.saleOrderCode || order.rentalOrderCode}{" "}
           </Text>
           <View style={styles.card}>
             {(data?.length > 0 ? data : [order]).map((item, index) => {
               const _item = { ...item };
-              console.log("thang con" + item);
-              console.log(_item);
+              // console.log("thang con" + item);
+              // console.log(_item);
 
               return (
                 <View
@@ -510,7 +549,7 @@ function SelectPayment({ route }) {
                           _item?.imgAvatarPath ||
                           "https://via.placeholder.com/100",
                       }}
-                      style={{ width: 80, height: 80 }}
+                      style={{ width: 50, height: 50 }}
                     />
                     <View key={index} style={styles.itemRow}>
                       <View>
@@ -533,6 +572,7 @@ function SelectPayment({ route }) {
                       </Text>
                     </View>
                   </View>
+
                   <View>
                     {item?.rentalStartDate ? (
                       <Text
@@ -595,15 +635,24 @@ function SelectPayment({ route }) {
             })}
             <TotalItem
               label="Tổng cộng"
-              value={formatCurrency(order.totalAmount)}
+              value={order.totalAmount.toLocaleString("vi-VN") + "₫"}
             />
             <TotalItem
               label="Phí vận chuyển"
-              value={formatCurrency(order.tranSportFee)}
+              value={
+                order.tranSportFee === 0
+                  ? "Miễn phí"
+                  : `${order.tranSportFee.toLocaleString("vi-VN")} ₫`
+              }
             />
+
             <TotalItem
               label="Thành tiền"
-              value={formatCurrency(order.totalAmount + order.tranSportFee)}
+              value={
+                (order.totalAmount + order.tranSportFee).toLocaleString(
+                  "vi-VN"
+                ) + "₫"
+              }
               isTotal
             />
           </View>
@@ -769,7 +818,7 @@ function SelectPayment({ route }) {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đơn hàng đã đặt cọc</Text>
                 <Text style={styles.depositText}>
-                  Số tiền:{order.depositAmount}
+                  Số tiền: {order.depositAmount.toLocaleString("Vi-vn")} ₫
                 </Text>
               </View>
             ) : null}
@@ -901,7 +950,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    marginTop : 10,
+    marginTop: 10,
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
@@ -935,6 +984,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginBottom: 2,
+    width: "80%",
   },
   infoValue: {
     fontSize: 16,
@@ -951,7 +1001,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
-    width: "100%",
+    width: "80%",
   },
   itemName2: {
     flex: 1,
@@ -1204,6 +1254,74 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+  cardWithShadow: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginLeft: 8,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 4,
+  },
+  statusValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    textAlign: "center",
+  },
+  paymentStatusValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 4,
+  },
+  "bg-yellow-100 text-yellow-800": {
+    backgroundColor: "#FFFBEB",
+    color: "#B45309",
+  },
+  "bg-orange-100 text-orange-800": {
+    backgroundColor: "#FFF7ED",
+    color: "#C05621",
+  },
+  "bg-purple-100 text-purple-800": {
+    backgroundColor: "#F7E8FF",
+    color: "#6B21A8",
+  },
+  "bg-indigo-100 text-indigo-800": {
+    backgroundColor: "#E0E7FF",
+    color: "#4338CA",
+  },
+  "bg-blue-100 text-blue-800": {
+    backgroundColor: "#DBEAFE",
+    color: "#1D4ED8",
+  },
+  "bg-red-200 text-red-900": {
+    backgroundColor: "#FEE2E2",
+    color: "#991B1B",
+  },
+  "bg-green-100 text-green-800": {
+    backgroundColor: "#DCFCE7",
+    color: "#166534",
+  },
+  "text-yellow-800": { color: "#B45309" },
+  "text-blue-800": { color: "#1D4ED8" },
+  "text-green-800": { color: "#166534" },
+  "text-red-800": { color: "#991B1B" },
 });
 
 export default SelectPayment;

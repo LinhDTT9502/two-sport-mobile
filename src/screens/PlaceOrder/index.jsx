@@ -192,7 +192,7 @@ export default function PlaceOrderScreen({ route }) {
     }
     data[index]['dateSelected'][key] = val
     if (data?.[index]?.['dateSelected']?.start &&  data?.[index]?.['dateSelected']?.end) {
-      data[index]['dateSelected'].count = dayjs(data?.[index]?.['dateSelected']?.end).diff(dayjs(data?.[index]?.['dateSelected']?.start), 'day') + 1
+      data[index]['dateSelected'].count = dayjs(data?.[index]?.['dateSelected']?.end).diff(dayjs(data?.[index]?.['dateSelected']?.start), 'day')
     }
     setCartItems(data)
     setDatePickerVisibility(false)

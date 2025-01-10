@@ -6,6 +6,7 @@ import { addCusCart } from "../redux/slices/customerCartSlice";
 import { addCart } from "../redux/slices/cartSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { addToCart } from "../services/cartService";
+import { checkQuantityProduct } from '../services/warehouseService';
 
 const AddToCartButton = ({ product, quantity, color, size, condition , onCartUpdated,}) => {
   const dispatch = useDispatch();
@@ -20,6 +21,16 @@ const AddToCartButton = ({ product, quantity, color, size, condition , onCartUpd
     }
 
     try {
+      const response = await checkQuantityProduct(product.id);
+      if (quantity > response.availableQuantity) {
+        Alert.alert(
+          "Thông báo",
+          `Sản phẩm này chỉ còn ${response.availableQuantity} sản phẩm trong kho.`
+        );
+        return;
+      }
+
+
       const token = await AsyncStorage.getItem("token");
       const payload = {
         ...product,

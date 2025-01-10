@@ -24,7 +24,7 @@ import RentButton from "../../components/RentButton";
 import BuyNowButton from "../../components/BuyNowButton";
 import Comment from "../../components/ProductDetail/Comment";
 import LikeButton from "../../components/ProductDetail/LikeButton";
-import BookmarkComponent from "../../components/BookmarkComponent";
+import { checkQuantityProduct } from '../../services/warehouseService';
 
 import {
   fetchProductById,
@@ -448,31 +448,54 @@ export default function ProductDetail() {
     }
   };
 
-  const handleAddToCart = (type) => {
+  const handleAddToCart = async (type) => {
+  try {
     if (!selectedColor) {
-      Alert.alert("Thông báo", `Vui lòng chọn màu sắc!`);
+      Alert.alert("Thông báo", "Vui lòng chọn màu sắc!");
       return;
     }
 
     if (!selectedSize) {
-      Alert.alert("Thông báo", `Vui lòng chọn kích thước!`);
+      Alert.alert("Thông báo", "Vui lòng chọn kích thước!");
       return;
     }
 
     if (!selectedCondition) {
-      Alert.alert("Thông báo", `Vui lòng chọn tình trạng!`);
+      Alert.alert("Thông báo", "Vui lòng chọn tình trạng!");
       return;
     }
 
+    // Kiểm tra số lượng sản phẩm trong kho
+    const response = await checkQuantityProduct(product.id);
+    if (quantity > response.availableQuantity) {
+      Alert.alert(
+        "Thông báo",
+        `Sản phẩm này chỉ còn lại ${response.availableQuantity} sản phẩm trong kho.`
+      );
+      return;
+    }
+
+    // Điều hướng đến màn hình đặt hàng nếu số lượng hợp lệ
     if (type === "buy" || type === "rent") {
       return navigation.navigate("PlacedOrder", {
         selectedCartItems: [
-          { ...product, quantity, size: selectedSize, color: selectedColor },
+          {
+            ...product,
+            quantity,
+            size: selectedSize,
+            color: selectedColor,
+            condition: selectedCondition,
+          },
         ],
         type,
       });
     }
-  };
+  } catch (error) {
+    console.error("Error during add to cart:", error);
+    Alert.alert("Lỗi", "Đã xảy ra lỗi. Vui lòng thử lại.");
+  }
+};
+
 
   const handleSubmitReview = () => {
     if (userRating === 0) {

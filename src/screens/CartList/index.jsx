@@ -30,6 +30,7 @@ import {
   updateCartItemQuantity,
 } from "../../services/cartService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { checkQuantityProduct } from "../../services/warehouseService";
 
 const COLORS = {
   primary: "#3366FF",
@@ -82,7 +83,7 @@ export default function Cart() {
   const handleSelectAll = () => {
     setSelectAll(!selectAll);
     setSelectedItems(
-      selectAll ? [] : cartItems.map((item) => item.cartItemId || item.id)
+      selectAll ? [] : cartItems.map((item) => item.cartItemId)
     );
   };
 
@@ -104,6 +105,8 @@ export default function Cart() {
       } else {
         dispatch(removeFromCart(itemId));
       }
+            setSelectedItems((prev) => prev.filter((id) => id !== itemId));
+
     } catch (error) {
       console.error("Error removing cart item:", error);
       Alert.alert("Lỗi", "Không thể xóa sản phẩm.");
@@ -149,7 +152,7 @@ export default function Cart() {
           dispatch(decreaseQuantity(item.id));
         }
       } else {
-        await handleRemoveItem(item.id);
+        await handleRemoveItem(item.cartItemId || item.id);
       }
     } catch (error) {
       console.error("Error decreasing quantity:", error.message);
@@ -172,9 +175,7 @@ export default function Cart() {
       } else {
         dispatch(updateQuantity({ id, qty: parseInt(qty) }));
       }
-    } catch (error) {
-      // console.log("🚀 ~ handleUpdateQty ~ error:", error);
-    }
+    } catch (error) {}
   };
 
   const calculateTotal = () => {
@@ -208,36 +209,74 @@ export default function Cart() {
     // console.log("Cart Items:", cartItems);
   }, [cartItems]);
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (selectedItems.length === 0) {
       Alert.alert("Lỗi", "Vui lòng chọn sản phẩm để mua.");
       return;
     }
 
-    const selectedCartItems = cartItems.filter((item) =>
-      selectedItems.includes(item.cartItemId || item.id)
-    );
+    try {
+      const selectedCartItems = cartItems.filter((item) =>
+        selectedItems.includes(item.cartItemId || item.id)
+      );
 
-    navigation.navigate("PlacedOrder", { selectedCartItems, type: "buy" });
+      // Kiểm tra số lượng tồn kho cho từng sản phẩm
+      for (const item of selectedCartItems) {
+        const response = await checkQuantityProduct(item.productId);
+        if (item.quantity > response.availableQuantity) {
+          Alert.alert(
+            "Thông báo",
+            `Sản phẩm "${item.productName}" chỉ còn ${response.availableQuantity} trong kho.`
+          );
+          return;
+        }
+      }
+
+      // Điều hướng đến trang đặt hàng nếu tất cả sản phẩm đều hợp lệ
+      navigation.navigate("PlacedOrder", { selectedCartItems, type: "buy" });
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra số lượng sản phẩm:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi trong quá trình kiểm tra số lượng.");
+    }
   };
 
-  const handleRent = () => {
+  const handleRent = async () => {
     if (selectedItems.length === 0) {
       Alert.alert("Lỗi", "Vui lòng chọn sản phẩm để thuê.");
       return;
     }
-    const selectedCartItems = cartItems.filter((item) =>
-      selectedItems.includes(item.cartItemId || item.id)
-    );
 
-    navigation.navigate("PlacedOrder", { selectedCartItems, type: "rent" });
+    try {
+      const selectedCartItems = cartItems.filter((item) =>
+        selectedItems.includes(item.cartItemId || item.id)
+      );
+
+      // Kiểm tra số lượng tồn kho cho từng sản phẩm
+      for (const item of selectedCartItems) {
+        const response = await checkQuantityProduct(item.productId);
+        if (item.quantity > response.availableQuantity) {
+          Alert.alert(
+            "Thông báo",
+            `Sản phẩm "${item.productName}" chỉ còn ${response.availableQuantity} trong kho.`
+          );
+          return;
+        }
+      }
+
+      // Điều hướng đến trang đặt hàng nếu tất cả sản phẩm đều hợp lệ
+      navigation.navigate("PlacedOrder", { selectedCartItems, type: "rent" });
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra số lượng sản phẩm:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi trong quá trình kiểm tra số lượng.");
+    }
   };
 
-const hasNonRentableItems = selectedItems.some((id) => {
-  const item = cartItems.find((cartItem) => cartItem.cartItemId === id || cartItem.id === id);
-  return item && item.rentPrice === 0; 
-});
-
+  const hasNonRentableItems = selectedItems.some((id) => {
+    const item = cartItems.find(
+      (cartItem) => cartItem.cartItemId === id || cartItem.id === id
+    );
+    return item && item.rentPrice === 0;
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -364,7 +403,7 @@ const hasNonRentableItems = selectedItems.some((id) => {
                             }}
                             onBlur={(e) =>
                               handleUpdateQty(
-                                item.cartItemId || item.id,
+                                item.cartItemId,
                                 e.target.value
                               )
                             }
@@ -402,36 +441,34 @@ const hasNonRentableItems = selectedItems.some((id) => {
                       </Text>
                     </View>
                     <View
-  style={{
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 5,
-  }}
->
-  <Text
-    style={{
-      fontSize: 16,
-      fontWeight: "bold",
-      color: "#333",  
-    }}
-  >
-    Giá thuê:
-  </Text>
-  <Text
-    style={{
-      fontSize: 16,
-      fontWeight: "600",
-      color: item.rentPrice !== 0 ? "#FF5722" : "#666",
-      marginLeft: 5, 
-    }}
-  >
-    {item.rentPrice !== 0
-      ? item.rentPrice.toLocaleString("vi-VN") + "₫"
-      : "Sản phẩm chỉ bán"}
-  </Text>
-</View>
-
-                    
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginVertical: 5,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "bold",
+                          color: "#333",
+                        }}
+                      >
+                        Giá thuê:
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color: item.rentPrice !== 0 ? "#FF5722" : "#666",
+                          marginLeft: 5,
+                        }}
+                      >
+                        {item.rentPrice !== 0
+                          ? item.rentPrice.toLocaleString("vi-VN") + "₫"
+                          : "Sản phẩm chỉ bán"}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               );
@@ -439,48 +476,53 @@ const hasNonRentableItems = selectedItems.some((id) => {
         </ScrollView>
 
         {cartItems && cartItems.length > 0 && (
-  <View style={styles.bottomNav}>
-    <TouchableOpacity
-      style={styles.selectAllContainer}
-      onPress={handleSelectAll}
-    >
-      <View style={[styles.checkbox, selectAll && styles.checkboxSelected]}>
-        {selectAll && (
-          <Ionicons name="checkmark" size={16} color={COLORS.white} />
+          <View style={styles.bottomNav}>
+            <TouchableOpacity
+              style={styles.selectAllContainer}
+              onPress={handleSelectAll}
+            >
+              <View
+                style={[styles.checkbox, selectAll && styles.checkboxSelected]}
+              >
+                {selectAll && (
+                  <Ionicons name="checkmark" size={16} color={COLORS.white} />
+                )}
+              </View>
+              <Text style={styles.selectAllText}>Chọn tất cả</Text>
+            </TouchableOpacity>
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalText}>Tổng cộng:</Text>
+              <Text style={styles.totalAmount}>
+                {formatCurrency(parseFloat(calculateTotal()))}
+              </Text>
+            </View>
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.buyNowButton]}
+                onPress={handleBuyNow}
+              >
+                <FontAwesome
+                  name="shopping-bag"
+                  size={20}
+                  color={COLORS.white}
+                />
+                <Text style={styles.actionButtonText}>Mua ngay</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  styles.rentButton,
+                  hasNonRentableItems && { backgroundColor: COLORS.gray },
+                ]}
+                onPress={handleRent}
+                disabled={hasNonRentableItems}
+              >
+                <FontAwesome name="calendar" size={20} color={COLORS.white} />
+                <Text style={styles.actionButtonText}>Thuê</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-      </View>
-      <Text style={styles.selectAllText}>Chọn tất cả</Text>
-    </TouchableOpacity>
-    <View style={styles.totalContainer}>
-      <Text style={styles.totalText}>Tổng cộng:</Text>
-      <Text style={styles.totalAmount}>
-        {formatCurrency(parseFloat(calculateTotal()))}
-      </Text>
-    </View>
-    <View style={styles.actionButtonsContainer}>
-      <TouchableOpacity
-        style={[styles.actionButton, styles.buyNowButton]}
-        onPress={handleBuyNow}
-      >
-        <FontAwesome name="shopping-bag" size={20} color={COLORS.white} />
-        <Text style={styles.actionButtonText}>Mua ngay</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.actionButton,
-          styles.rentButton,
-          hasNonRentableItems && { backgroundColor: COLORS.gray },
-        ]}
-        onPress={handleRent}
-        disabled={hasNonRentableItems}
-      >
-        <FontAwesome name="calendar" size={20} color={COLORS.white} />
-        <Text style={styles.actionButtonText}>Thuê</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-)}
-
       </View>
     </SafeAreaView>
   );
@@ -594,6 +636,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.dark,
     marginRight: 8,
+    width:"70%"
   },
   deleteButton: {
     padding: 4,
