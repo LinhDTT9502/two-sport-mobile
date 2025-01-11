@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  ScrollView,
+  ScrollView,RefreshControl,
   View,
   Image,
   TextInput,
@@ -59,6 +59,8 @@ function SelectPayment({ route }) {
   const [selectedChildOrder, setSelectedChildOrder] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [orderData, setOrderData] = useState(order);
 
   useEffect(() => {}, [status, showExtendedModal]);
 
@@ -190,16 +192,47 @@ function SelectPayment({ route }) {
         );
       }
 
+      setOrderData((prevData) => ({
+        ...prevData,
+        orderStatus: "Đã hủy",
+      }));
+
       setStatus("Đã hủy");
       setReason("");
       setShowModal(false); 
       Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
 
     } catch (error) {
-      console.error("Error cancel order:", error);
+      console.error("Error canceling order:", error);
       Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
     }
   };
+
+  const checkIsReviewed = async (saleOrderId) => {
+    try {
+      const response = await axios.get(
+        `https://capstone-project-703387227873.asia-southeast1.run.app/api/Review/check-is-review/${saleOrderId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error checking review status:", error);
+      return false; 
+    }
+  };
+
+  useEffect(() => {
+    const fetchReviewStatus = async () => {
+      const isReviewed = await checkIsReviewed(order.id);
+      setOrderData((prevData) => ({
+        ...prevData,
+        isReviewed, 
+      }));
+    };
+  
+    fetchReviewStatus();
+  }, [order.id]);
+
+  
   const handleUpdateOrderStatus = async () => {
     Alert.alert("Xác nhận", "Bạn đã nhận được hàng?", [
       {
@@ -241,6 +274,10 @@ function SelectPayment({ route }) {
             // Alert.alert("2Sport cảm ơn quý khách");
 
             setStatus("Đã giao hàng");
+            Alert.alert("Thành công", "Bạn đã xác nhận đã nhận hàng.");
+            setTimeout(() => {
+              navigation.replace("SelectPayment", { order });
+            });
           } catch (error) {
             console.error("Error cancel order:", error);
             Alert.alert("Lỗi", "Không thể xác nhận.");
@@ -322,6 +359,7 @@ function SelectPayment({ route }) {
     }
   };
 
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -334,6 +372,32 @@ function SelectPayment({ route }) {
         <Text style={styles.headerTitle}>Chi tiết đơn hàng </Text>
       </View>
       <View style={styles.buttonReq}>
+
+      {orderData.orderStatus === "Đã hoàn thành" && !orderData.isReviewed && (
+    <TouchableOpacity
+      style={{
+        backgroundColor: "#3366FF",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginHorizontal: 16,
+        marginTop: 8,
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      }}
+      onPress={() =>
+        navigation.navigate("AddReview", { orderId: orderData.id })
+      }
+    >
+      <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+        Đánh giá
+      </Text>
+    </TouchableOpacity>
+  )}
+  
         {order.orderStatus === "Đã giao cho ĐVVC" && (
           <TouchableOpacity
             style={[
@@ -359,6 +423,7 @@ function SelectPayment({ route }) {
             </Text>
           </TouchableOpacity>
         )}
+        
 
         {order.orderStatus === "Chờ xử lý" && (
           <TouchableOpacity
@@ -468,7 +533,17 @@ function SelectPayment({ route }) {
         </Modal>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content}
+      refreshControl={
+        <RefreshControl
+      refreshing={refreshing}
+      onRefresh={() => {
+        setRefreshing(true); 
+        setOrderData({ ...orderData });
+        setRefreshing(false); 
+      }}
+    />
+      }>
         {/* Customer Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
@@ -476,22 +551,22 @@ function SelectPayment({ route }) {
             <View style={styles.infoRow}>
               <Feather name="user" size={18} color="#333" />
               <Text style={styles.infoLabel}>Tên:</Text>
-              <Text style={styles.infoValue}>{order.fullName}</Text>
+              <Text style={styles.infoValue}>{orderData.fullName}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="mail" size={18} color="#333" />
               <Text style={styles.infoLabel}>Email:</Text>
-              <Text style={styles.infoValue}>{order.email}</Text>
+              <Text style={styles.infoValue}>{orderData.email}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="phone" size={18} color="#333" />
               <Text style={styles.infoLabel}>Số điện thoại:</Text>
-              <Text style={styles.infoValue}>{order.contactPhone}</Text>
+              <Text style={styles.infoValue}>{orderData.contactPhone}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="map-pin" size={18} color="#333" />
               <Text style={styles.infoLabel}>Địa chỉ:</Text>
-              <Text style={styles.infoValue}>{order.address}</Text>
+              <Text style={styles.infoValue}>{orderData.address}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="tag" size={18} color="#333" />
@@ -499,10 +574,10 @@ function SelectPayment({ route }) {
               <Text
                 style={[
                   styles.statusValue,
-                  styles[statusColors[status || order.orderStatus]],
+                  styles[statusColors[status || orderData.orderStatus]],
                 ]}
               >
-                {status || order.orderStatus}
+                {status || orderData.orderStatus}
               </Text>
             </View>
             <View style={styles.infoRow}>
@@ -511,10 +586,10 @@ function SelectPayment({ route }) {
               <Text
                 style={[
                   styles.paymentStatusValue,
-                  styles[paymentStatusColors[order.paymentStatus]],
+                  styles[paymentStatusColors[orderData.paymentStatus]],
                 ]}
               >
-                {order.paymentStatus}
+                {orderData.paymentStatus}
               </Text>
             </View>
           </View>

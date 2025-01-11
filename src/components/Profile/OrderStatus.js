@@ -8,10 +8,10 @@ const OrderSection = () => {
   const navigation = useNavigation();
 
   const statuses = [
-    { label: "Chờ xác nhận", icon: "time-outline", value: "pending", color: "#FF9900" },
-    { label: "Chờ lấy hàng", icon: "cube-outline", value: "pickup", color: "#4CAF50" },
-    { label: "Đang giao", icon: "bicycle-outline", value: "shipping", color: "#2196F3" },
-    { label: "Đánh giá", icon: "star-outline", value: "review", color: "#9C27B0" },
+    { label: "Chờ xử lý", icon: "time-outline", value: "pending", color: "#FF9900" },
+    { label: "Đã xác nhận", icon: "cube-outline", value: "pickup", color: "#2196F3" },
+    { label: "Đang hoàn thành", icon: "bicycle-outline", value: "shipping", color: "#4CAF50"  },
+    { label: "Đã hủy", icon: "star-outline", value: "review", color: "red" },
   ];
 
   const handleStatusClick = (status) => {

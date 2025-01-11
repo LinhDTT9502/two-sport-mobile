@@ -22,11 +22,12 @@ const OrderMethod = ({
   handleOptionChange,
   selectedBranchId,
   setSelectedBranchId,
+  selectedProducts = [],
 }) => {
   const [branches, setBranches] = useState([]);
   const [branchStatus, setBranchStatus] = useState({});
   const user = useSelector(selectUser);
-
+  
   useEffect(() => {
     const loadBranchesWithStatus = async () => {
       try {
@@ -35,21 +36,43 @@ const OrderMethod = ({
 
         const statusPromises = branchData.map(async (branch) => {
           const products = await fetchProductsbyBranch(branch.id);
-          const isAvailable = products.some(
-            (product) => product.availableQuantity > 0
-          );
+
+          // Evaluate product availability at each branch
+          const unavailableProducts = selectedProducts
+            .map((selectedProduct) => {
+              const branchProduct = products.find(
+                (p) => p.productId === selectedProduct.id
+              );
+
+              if (!branchProduct || branchProduct.availableQuantity < selectedProduct.quantity) {
+                return {
+                  productName: selectedProduct.productName,
+                  availableQuantity: branchProduct?.availableQuantity || 0, // Remaining stock
+                };
+              }
+
+              return null;
+            })
+            .filter((item) => item !== null);
+
+          const isAvailable = unavailableProducts.length === 0;
+
           return {
             branchId: branch.id,
+            branchName: branch.branchName,
+            branchLocation: branch.location,
             status: isAvailable ? "Còn hàng" : "Hết hàng",
+            unavailableProducts,
           };
         });
 
         const statuses = await Promise.all(statusPromises);
 
         const statusMap = {};
-        statuses.forEach(({ branchId, status }) => {
-          statusMap[branchId] = status;
+        statuses.forEach(({ branchId, ...rest }) => {
+          statusMap[branchId] = rest;
         });
+
         setBranchStatus(statusMap);
       } catch (error) {
         console.error("Error loading branches or availability:", error);
@@ -58,7 +81,7 @@ const OrderMethod = ({
     };
 
     loadBranchesWithStatus();
-  }, []);
+  }, [selectedProducts]);
 
   const handleBranchChange = (branchId) => {
     setSelectedBranchId(branchId);
@@ -109,21 +132,22 @@ const OrderMethod = ({
 
         {selectedOption === "STORE_PICKUP" && (
           <FlatList
-            data={branches}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
+          data={branches}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => {
+            const branch = branchStatus[item.id];
+  
+            return (
               <TouchableOpacity
                 style={[
                   styles.branchItem,
                   selectedBranchId === item.id && styles.selectedBranchItem,
-                  branchStatus[item.id] === "Hết hàng" &&
-                    styles.disabledBranchItem,
+                  branch?.status === "Hết hàng" && styles.disabledBranchItem,
                 ]}
                 onPress={() =>
-                  branchStatus[item.id] !== "Hết hàng" &&
-                  handleBranchChange(item.id)
+                  branch?.status !== "Hết hàng" && handleBranchChange(item.id)
                 }
-                disabled={branchStatus[item.id] === "Hết hàng"}
+                disabled={branch?.status === "Hết hàng"}
               >
                 <View style={styles.branchInfo}>
                   <Text style={styles.branchName}>{item.branchName}</Text>
@@ -131,20 +155,31 @@ const OrderMethod = ({
                   <Text
                     style={[
                       styles.branchStatus,
-                      branchStatus[item.id] === "Còn hàng"
+                      branch?.status === "Còn hàng"
                         ? styles.available
                         : styles.unavailable,
                     ]}
                   >
-                    {branchStatus[item.id]}
+                    {branch?.status}
                   </Text>
+  
+                  {branch?.unavailableProducts && branch?.unavailableProducts.length > 0 && (
+                    <View style={styles.productList}>
+                      {branch.unavailableProducts.map((product, index) => (
+                        <Text key={index} style={styles.productDetail}>
+{product.productName}: {product.availableQuantity}{" "}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
                 {selectedBranchId === item.id && (
-                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                  <Ionicons name="checkmark-circle" size={24} color="#3366FF" />
                 )}
               </TouchableOpacity>
-            )}
-          />
+            );
+          }}
+        />
         )}
       </View>
     </View>
