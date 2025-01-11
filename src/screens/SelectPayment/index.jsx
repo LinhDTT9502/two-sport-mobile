@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  ScrollView,RefreshControl,
+  ScrollView,
+  RefreshControl,
   View,
   Image,
   TextInput,
@@ -61,8 +62,9 @@ function SelectPayment({ route }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [orderData, setOrderData] = useState(order);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {}, [status, showExtendedModal]);
+  useEffect(() => {}, [isUpdating, status, showExtendedModal]);
 
   const handleCheck = async () => {
     if (paymentCompleted) {
@@ -178,6 +180,7 @@ function SelectPayment({ route }) {
             },
           }
         );
+        setIsUpdating(true);
       } else if (order.rentalOrderCode) {
         const response = await axios.post(
           `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
@@ -191,7 +194,7 @@ function SelectPayment({ route }) {
           }
         );
       }
-
+      setIsUpdating(true);
       setOrderData((prevData) => ({
         ...prevData,
         orderStatus: "Đã hủy",
@@ -199,14 +202,16 @@ function SelectPayment({ route }) {
 
       setStatus("Đã hủy");
       setReason("");
-      setShowModal(false); 
+      setShowModal(false);
       Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
-
     } catch (error) {
       console.error("Error canceling order:", error);
       Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
+    } finally {
+      setIsUpdating(false);
     }
   };
+
 
   const checkIsReviewed = async (saleOrderId) => {
     try {
@@ -216,7 +221,7 @@ function SelectPayment({ route }) {
       return response.data;
     } catch (error) {
       console.error("Error checking review status:", error);
-      return false; 
+      return false;
     }
   };
 
@@ -225,14 +230,13 @@ function SelectPayment({ route }) {
       const isReviewed = await checkIsReviewed(order.id);
       setOrderData((prevData) => ({
         ...prevData,
-        isReviewed, 
+        isReviewed,
       }));
     };
-  
+
     fetchReviewStatus();
   }, [order.id]);
 
-  
   const handleUpdateOrderStatus = async () => {
     Alert.alert("Xác nhận", "Bạn đã nhận được hàng?", [
       {
@@ -242,6 +246,7 @@ function SelectPayment({ route }) {
       {
         text: "Xác nhận",
         onPress: async () => {
+          setIsUpdating(true);
           try {
             const newStatus = 5;
             if (order.saleOrderCode) {
@@ -281,6 +286,8 @@ function SelectPayment({ route }) {
           } catch (error) {
             console.error("Error cancel order:", error);
             Alert.alert("Lỗi", "Không thể xác nhận.");
+          } finally {
+            setIsUpdating(false);
           }
         },
       },
@@ -359,7 +366,6 @@ function SelectPayment({ route }) {
     }
   };
 
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -372,32 +378,31 @@ function SelectPayment({ route }) {
         <Text style={styles.headerTitle}>Chi tiết đơn hàng </Text>
       </View>
       <View style={styles.buttonReq}>
+        {orderData.orderStatus === "Đã hoàn thành" && !orderData.isReviewed && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#3366FF",
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+              borderRadius: 8,
+              marginHorizontal: 16,
+              marginTop: 8,
+              elevation: 2,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+            }}
+            onPress={() =>
+              navigation.navigate("AddReview", { orderId: orderData.id })
+            }
+          >
+            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+              Đánh giá
+            </Text>
+          </TouchableOpacity>
+        )}
 
-      {orderData.orderStatus === "Đã hoàn thành" && !orderData.isReviewed && (
-    <TouchableOpacity
-      style={{
-        backgroundColor: "#3366FF",
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        marginHorizontal: 16,
-        marginTop: 8,
-        elevation: 2,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      }}
-      onPress={() =>
-        navigation.navigate("AddReview", { orderId: orderData.id })
-      }
-    >
-      <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
-        Đánh giá
-      </Text>
-    </TouchableOpacity>
-  )}
-  
         {order.orderStatus === "Đã giao cho ĐVVC" && (
           <TouchableOpacity
             style={[
@@ -423,12 +428,11 @@ function SelectPayment({ route }) {
             </Text>
           </TouchableOpacity>
         )}
-        
 
         {order.orderStatus === "Chờ xử lý" && (
           <TouchableOpacity
             style={{
-              backgroundColor: "#FF4444",
+              backgroundColor: isUpdating ? "#CCC" : "#FF4444",
               paddingVertical: 12,
               paddingHorizontal: 20,
               borderRadius: 8,
@@ -440,7 +444,8 @@ function SelectPayment({ route }) {
               shadowOpacity: 0.1,
               shadowRadius: 4,
             }}
-            onPress={() => setShowModal(true)}
+            onPress={() => !isUpdating && setShowModal(true)}
+            disabled={isUpdating}
           >
             <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
               Hủy đơn
@@ -533,17 +538,19 @@ function SelectPayment({ route }) {
         </Modal>
       </View>
 
-      <ScrollView style={styles.content}
-      refreshControl={
-        <RefreshControl
-      refreshing={refreshing}
-      onRefresh={() => {
-        setRefreshing(true); 
-        setOrderData({ ...orderData });
-        setRefreshing(false); 
-      }}
-    />
-      }>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              setOrderData({ ...orderData });
+              setRefreshing(false);
+            }}
+          />
+        }
+      >
         {/* Customer Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
