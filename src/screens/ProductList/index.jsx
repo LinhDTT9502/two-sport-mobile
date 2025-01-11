@@ -281,7 +281,7 @@ export default function ProductListing() {
             {item.categoryName}
           </Text>
           <Text style={styles.productPrice}>
-            {price !== "N.A" ? `${parseInt(price).toLocaleString("vi-vn")} ₫` : "N.A"}
+            {price !== "N.A" ? `${parseInt(price).toLocaleString("vi-vn")}₫` : "N.A"}
           </Text>
           {token && (
             <BookmarkComponent
@@ -356,8 +356,8 @@ export default function ProductListing() {
           {sortOrder === "default"
             ? "Mặc định"
             : sortOrder === "highToLow"
-            ? "Giá cao → thấp"
-            : "Giá thấp → cao"}
+              ? "Giá cao → thấp"
+              : "Giá thấp → cao"}
         </Text>
         <Ionicons name="chevron-down" size={16} color="#333" />
       </TouchableOpacity>
@@ -403,7 +403,7 @@ export default function ProductListing() {
                       style={[
                         styles.filterChip,
                         selectedBrands.includes(brand.id) &&
-                          styles.selectedFilterChip,
+                        styles.selectedFilterChip,
                       ]}
                       onPress={() => toggleFilter("brand", brand.id)}
                     >
@@ -411,7 +411,7 @@ export default function ProductListing() {
                         style={[
                           styles.filterChipText,
                           selectedBrands.includes(brand.id) &&
-                            styles.selectedFilterChipText,
+                          styles.selectedFilterChipText,
                         ]}
                       >
                         {brand.brandName}
@@ -430,7 +430,7 @@ export default function ProductListing() {
                       style={[
                         styles.filterChip,
                         selectedCategories.includes(category.id) &&
-                          styles.selectedFilterChip,
+                        styles.selectedFilterChip,
                       ]}
                       onPress={() => toggleFilter("category", category.id)}
                     >
@@ -438,7 +438,7 @@ export default function ProductListing() {
                         style={[
                           styles.filterChipText,
                           selectedCategories.includes(category.id) &&
-                            styles.selectedFilterChipText,
+                          styles.selectedFilterChipText,
                         ]}
                       >
                         {category.categoryName}

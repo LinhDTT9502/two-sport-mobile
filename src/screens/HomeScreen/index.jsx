@@ -152,7 +152,7 @@ const HomePage = () => {
           {product.productName || product.name}
         </Text>
         <Text style={styles.productPrice}>
-          {product.price?.toLocaleString("vi-vn") || "N/A"} ₫
+          {product.price?.toLocaleString("vi-vn") || "N/A"}₫
         </Text>
       </View>
     </TouchableOpacity>
@@ -216,7 +216,7 @@ const HomePage = () => {
           />
         </View>
         <View>
-        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Thương hiệu</Text>
             <TouchableOpacity onPress={() => navigation.navigate("ProductList")}>
               <Text style={styles.viewAllText}>Xem tất cả</Text>

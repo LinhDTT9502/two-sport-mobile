@@ -55,7 +55,7 @@ export default function CategoryProduct() {
   };
 
   const filterAndSortProducts = () => {
-    let filtered = products.filter(product => 
+    let filtered = products.filter(product =>
       product.price >= minPrice &&
       product.price <= maxPrice
     );
@@ -95,12 +95,12 @@ export default function CategoryProduct() {
       loadCategoryProducts();
       return;
     }
-  
+
     setLoading(true);
     try {
       const response = await searchProducts(searchQuery);
       // console.log("API Response:", response);
-      const searchResults = response.data?.$values || []; 
+      const searchResults = response.data?.$values || [];
       const uniqueResults = [...new Map(searchResults.map(item => [item.id, item])).values()];
       setProducts(uniqueResults);
       setTotalProducts(uniqueResults.length);
@@ -125,7 +125,7 @@ export default function CategoryProduct() {
           {item.productName || item.name}
         </Text>
         <Text style={styles.productPrice}>
-          {item.price.toLocaleString("vi-vn")} ₫
+          {item.price.toLocaleString("vi-vn")}₫
         </Text>
       </View>
     </TouchableOpacity>
@@ -142,16 +142,16 @@ export default function CategoryProduct() {
         <Text style={styles.headerTitle}>{categoryName}</Text>
       </View>
       <View style={styles.searchContainer}>
-      <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm sản phẩm..."
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          <TouchableOpacity onPress={handleSearch}>
-            <Ionicons name="search" size={20} color="#999" />
-          </TouchableOpacity>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm sản phẩm..."
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        <TouchableOpacity onPress={handleSearch}>
+          <Ionicons name="search" size={20} color="#999" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={toggleSortOrder} style={styles.sortButton}>
           <Ionicons
             name={sortOrder === 'lowToHigh' ? 'arrow-up' : 'arrow-down'}
@@ -162,8 +162,8 @@ export default function CategoryProduct() {
             {sortOrder === 'default'
               ? 'Mặc định'
               : sortOrder === 'highToLow'
-              ? 'Giá cao → thấp'
-              : 'Giá thấp → cao'}
+                ? 'Giá cao → thấp'
+                : 'Giá thấp → cao'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={toggleFilterModal}>

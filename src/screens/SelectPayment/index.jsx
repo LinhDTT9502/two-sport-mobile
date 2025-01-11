@@ -840,7 +840,7 @@ function SelectPayment({ route }) {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đơn hàng đã đặt cọc</Text>
                 <Text style={styles.depositText}>
-                  Số tiền: {order.depositAmount.toLocaleString("Vi-vn")} ₫
+                  Số tiền: {order.depositAmount.toLocaleString("Vi-vn")}₫
                 </Text>
               </View>
             ) : null}

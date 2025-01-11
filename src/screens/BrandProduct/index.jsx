@@ -55,7 +55,7 @@ export default function BrandProduct() {
   };
 
   const filterAndSortProducts = () => {
-    let filtered = products.filter(product => 
+    let filtered = products.filter(product =>
       product.price >= minPrice &&
       product.price <= maxPrice
     );
@@ -98,7 +98,7 @@ export default function BrandProduct() {
     setLoading(true);
     try {
       const response = await searchProducts(searchQuery);
-      const searchResults = response.data?.$values || []; 
+      const searchResults = response.data?.$values || [];
       const uniqueResults = [...new Map(searchResults.map(item => [item.id, item])).values()];
       setProducts(uniqueResults);
       setTotalProducts(uniqueResults.length);
@@ -123,7 +123,7 @@ export default function BrandProduct() {
           {item.productName || item.name}
         </Text>
         <Text style={styles.productPrice}>
-          {item.price.toLocaleString("vi-vn")} ₫
+          {item.price.toLocaleString("vi-vn")}₫
         </Text>
       </View>
     </TouchableOpacity>
@@ -160,8 +160,8 @@ export default function BrandProduct() {
             {sortOrder === 'default'
               ? 'Mặc định'
               : sortOrder === 'highToLow'
-              ? 'Giá cao → thấp'
-              : 'Giá thấp → cao'}
+                ? 'Giá cao → thấp'
+                : 'Giá thấp → cao'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={toggleFilterModal}>
@@ -230,167 +230,167 @@ export default function BrandProduct() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: 30,
-      backgroundColor: '#F5F7FA',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      backgroundColor: '#FFFFFF',
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    backButton: {
-      marginRight: 16,
-    },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#333',
-    },
-    searchContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#FFFFFF',
-      margin: 16,
-      borderRadius: 8,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-    },
-    searchIcon: {
-      marginLeft: 12,
-    },
-    searchInput: {
-      flex: 1,
-      paddingVertical: 12,
-      paddingHorizontal: 8,
-      fontSize: 16,
-    },
-    sortButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderLeftWidth: 1,
-      borderLeftColor: '#EEEEEE',
-    },
-    sortButtonText: {
-      marginLeft: 4,
-      fontSize: 14,
-      color: '#333',
-    },
-    productsContainer: {
-      padding: 8,
-    },
-    productCard: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 12,
-      margin: 8,
-      width: (width - 48) / 2,
-      overflow: 'hidden',
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    productImage: {
-      width: '100%',
-      height: 150,
-      resizeMode: 'cover',
-    },
-    productInfo: {
-      padding: 12,
-    },
-    productName: {
-      fontSize: 14,
-      fontWeight: '600',
-      marginBottom: 4,
-      color: '#333',
-    },
-    productPrice: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#4A90E2',
-    },
-    loader: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    emptyText: {
-      fontSize: 16,
-      textAlign: 'center',
-      marginTop: 24,
-      color: '#666',
-    },
-    modalContainer: {
-      flex: 1,
-      justifyContent: "flex-end",
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
-    },
-    modalContent: {
-      backgroundColor: "#FFF",
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 20,
-    },
-    modalHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 20,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-    },
-    priceFilterContainer: {
-      marginTop: 20,
-    },
-    priceFilterTitle: {
-      fontSize: 16,
-      fontWeight: "bold",
-      marginBottom: 10,
-    },
-    priceInputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    priceInput: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: "#E0E0E0",
-      borderRadius: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      fontSize: 14,
-    },
-    priceSeparator: {
-      marginHorizontal: 10,
-      fontSize: 16,
-      color: "#333",
-    },
-    applyButton: {
-      backgroundColor: "#4A90E2",
-      borderRadius: 8,
-      paddingVertical: 12,
-      alignItems: "center",
-      marginTop: 20,
-    },
-    applyButtonText: {
-      color: "#FFF",
-      fontSize: 16,
-      fontWeight: "bold",
-    },
-  });
+  container: {
+    flex: 1,
+    paddingTop: 30,
+    backgroundColor: '#F5F7FA',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  searchIcon: {
+    marginLeft: 12,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    fontSize: 16,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: '#EEEEEE',
+  },
+  sortButtonText: {
+    marginLeft: 4,
+    fontSize: 14,
+    color: '#333',
+  },
+  productsContainer: {
+    padding: 8,
+  },
+  productCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    margin: 8,
+    width: (width - 48) / 2,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  productImage: {
+    width: '100%',
+    height: 150,
+    resizeMode: 'cover',
+  },
+  productInfo: {
+    padding: 12,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#333',
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4A90E2',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 24,
+    color: '#666',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  priceFilterContainer: {
+    marginTop: 20,
+  },
+  priceFilterTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  priceInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  priceInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  priceSeparator: {
+    marginHorizontal: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  applyButton: {
+    backgroundColor: "#4A90E2",
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  applyButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});

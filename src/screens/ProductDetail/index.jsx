@@ -449,52 +449,52 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = async (type) => {
-  try {
-    if (!selectedColor) {
-      Alert.alert("Thông báo", "Vui lòng chọn màu sắc!");
-      return;
-    }
+    try {
+      if (!selectedColor) {
+        Alert.alert("Thông báo", "Vui lòng chọn màu sắc!");
+        return;
+      }
 
-    if (!selectedSize) {
-      Alert.alert("Thông báo", "Vui lòng chọn kích thước!");
-      return;
-    }
+      if (!selectedSize) {
+        Alert.alert("Thông báo", "Vui lòng chọn kích thước!");
+        return;
+      }
 
-    if (!selectedCondition) {
-      Alert.alert("Thông báo", "Vui lòng chọn tình trạng!");
-      return;
-    }
+      if (!selectedCondition) {
+        Alert.alert("Thông báo", "Vui lòng chọn tình trạng!");
+        return;
+      }
 
-    // Kiểm tra số lượng sản phẩm trong kho
-    const response = await checkQuantityProduct(product.id);
-    if (quantity > response.availableQuantity) {
-      Alert.alert(
-        "Thông báo",
-        `Sản phẩm này chỉ còn lại ${response.availableQuantity} sản phẩm trong kho.`
-      );
-      return;
-    }
+      // Kiểm tra số lượng sản phẩm trong kho
+      const response = await checkQuantityProduct(product.id);
+      if (quantity > response.availableQuantity) {
+        Alert.alert(
+          "Thông báo",
+          `Sản phẩm này chỉ còn lại ${response.availableQuantity} sản phẩm trong kho.`
+        );
+        return;
+      }
 
-    // Điều hướng đến màn hình đặt hàng nếu số lượng hợp lệ
-    if (type === "buy" || type === "rent") {
-      return navigation.navigate("PlacedOrder", {
-        selectedCartItems: [
-          {
-            ...product,
-            quantity,
-            size: selectedSize,
-            color: selectedColor,
-            condition: selectedCondition,
-          },
-        ],
-        type,
-      });
+      // Điều hướng đến màn hình đặt hàng nếu số lượng hợp lệ
+      if (type === "buy" || type === "rent") {
+        return navigation.navigate("PlacedOrder", {
+          selectedCartItems: [
+            {
+              ...product,
+              quantity,
+              size: selectedSize,
+              color: selectedColor,
+              condition: selectedCondition,
+            },
+          ],
+          type,
+        });
+      }
+    } catch (error) {
+      console.error("Error during add to cart:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi. Vui lòng thử lại.");
     }
-  } catch (error) {
-    console.error("Error during add to cart:", error);
-    Alert.alert("Lỗi", "Đã xảy ra lỗi. Vui lòng thử lại.");
-  }
-};
+  };
 
 
   const handleSubmitReview = () => {
@@ -571,13 +571,13 @@ export default function ProductDetail() {
               <Text style={styles.productPrice}>
                 Giá mua:
                 {product.price
-                  ? ` ${formatCurrency(product.price)} ₫`
+                  ? ` ${formatCurrency(product.price)}₫`
                   : "Giá không có"}
               </Text>
               {product.discount && product.listedPrice ? (
                 <>
                   <Text style={styles.originalPrice}>
-                    {formatCurrency(product.listedPrice)} ₫
+                    {formatCurrency(product.listedPrice)}₫
                   </Text>
                   <Text style={styles.discount}>Giảm {product.discount}%</Text>
                 </>
@@ -585,11 +585,11 @@ export default function ProductDetail() {
             </View>
 
             <LikeButton
-  productId={productId}
-  productCode={product.productCode}
-  initialLikes={likes}
-  isLikedInitially={isLiked}
-/>
+              productId={productId}
+              productCode={product.productCode}
+              initialLikes={likes}
+              isLikedInitially={isLiked}
+            />
 
           </View>
 
@@ -619,7 +619,7 @@ export default function ProductDetail() {
                 style={[
                   styles.colorOptionContainer,
                   selectedColor === color.color &&
-                    styles.activeColorOptionContainer,
+                  styles.activeColorOptionContainer,
                   !color.status && styles.unavailableOption,
                 ]}
                 disabled={!color.status}
@@ -636,7 +636,7 @@ export default function ProductDetail() {
                   style={[
                     styles.colorOptionText,
                     selectedColor === color.color &&
-                      styles.activeColorOptionText,
+                    styles.activeColorOptionText,
                     !color.status && styles.unavailableText,
                   ]}
                 >
@@ -669,7 +669,7 @@ export default function ProductDetail() {
                       style={[
                         styles.sizeButtonText,
                         selectedSize === size.size &&
-                          styles.activeSizeButtonText,
+                        styles.activeSizeButtonText,
                         !size.status && styles.unavailableText,
                       ]}
                     >
@@ -699,7 +699,7 @@ export default function ProductDetail() {
                     style={[
                       styles.conditionButton,
                       selectedCondition === condition.condition &&
-                        styles.activeConditionButton,
+                      styles.activeConditionButton,
                       !condition.status && styles.unavailableOption,
                     ]}
                     disabled={!condition.status}
@@ -708,7 +708,7 @@ export default function ProductDetail() {
                       style={[
                         styles.conditionButtonText,
                         selectedCondition === condition.condition &&
-                          styles.activeConditionButtonText,
+                        styles.activeConditionButtonText,
                         !condition.status && styles.unavailableText,
                       ]}
                     >
@@ -820,7 +820,7 @@ export default function ProductDetail() {
           </View>
         </View>
       )}
-{item.type === "description" && (
+      {item.type === "description" && (
         <View>
           <Text style={styles.sectionTitle}>Mô tả sản phẩm</Text>
           {product.description ? (
@@ -940,27 +940,27 @@ export default function ProductDetail() {
 
       <View style={styles.bottomNav}>
         <View style={styles.buyNowContainer}>
-        <BuyNowButton
-      onPress={() => handleAddToCart("buy")}
-      disabled={
-        totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
-        !selectedColor ||
-        !selectedSize ||
-        !selectedCondition
-      }
-    />
+          <BuyNowButton
+            onPress={() => handleAddToCart("buy")}
+            disabled={
+              totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
+              !selectedColor ||
+              !selectedSize ||
+              !selectedCondition
+            }
+          />
         </View>
         {product?.isRent ? (
           <View style={styles.rentContainer}>
             <RentButton
-        onPress={() => handleAddToCart("rent")}
-        disabled={
-          totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
-          !selectedColor ||
-          !selectedSize ||
-          !selectedCondition
-        }
-      />
+              onPress={() => handleAddToCart("rent")}
+              disabled={
+                totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
+                !selectedColor ||
+                !selectedSize ||
+                !selectedCondition
+              }
+            />
           </View>
         ) : null}
       </View>
