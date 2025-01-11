@@ -283,7 +283,7 @@ export default function ProductListing() {
           <Text style={styles.productPrice}>
             {price !== "N.A" ? `${parseInt(price).toLocaleString("vi-vn")}₫` : "N.A"}
           </Text>
-          {token && (
+          {/* {token && (
             <BookmarkComponent
               item={{
                 id: item.id,
@@ -297,7 +297,7 @@ export default function ProductListing() {
               iconSize={20}
               color="#4A90E2"
             />
-          )}
+          )} */}
         </View>
       </TouchableOpacity>
     );
