@@ -266,7 +266,7 @@ export default function ProductListing() {
       <TouchableOpacity
         style={styles.productCard}
         onPress={() =>
-          navigation.navigate("ProductDetail", { productId: item.id })
+          navigation.navigate("ProductDetail", { productId: item.id, productCode: item.productCode })
         }
       >
         <Image

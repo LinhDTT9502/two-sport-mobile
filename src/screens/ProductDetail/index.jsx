@@ -53,7 +53,7 @@ export default function ProductDetail() {
   const [expanded, setExpanded] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
-  const { productId } = route.params;
+  const { productId , productCode } = route.params;
   const [token, setToken] = useState(null);
   const [product, setProduct] = useState({});
   // console.log("ProductDetail ~ product:", product)
@@ -887,7 +887,7 @@ export default function ProductDetail() {
       )} */}
       {item.type === "comments" && (
         <Comment
-          productId={productId}
+          productCode={productCode}
           isLoggedIn={isLoggedIn}
           currentUserId={currentUserId}
         />

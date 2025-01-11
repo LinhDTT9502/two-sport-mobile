@@ -23,25 +23,23 @@ const MAX_COMMENT_LENGTH = 100;
 const INITIAL_COMMENT_COUNT = 5;
 const LOAD_MORE_COUNT = 3;
 
-const Comment = ({ productId, isLoggedIn, currentUserId }) => {
+const Comment = ({ productCode, isLoggedIn, currentUserId }) => {
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [displayedComments, setDisplayedComments] = useState([]);
   const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingReplyId, setEditingReplyId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [error, setError] = useState(null);
-  const [replyingCommentId, setReplyingCommentId] = useState(null);
-  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
-    if (productId) {
+    if (productCode) {
       loadComments();
     } else {
-      console.error("Product ID is missing");
+      setError("Product ID is missing.");
     }
-  }, [productId]);
+  }, [productCode]);
+  
 
   const organizeComments = (commentsArray) => {
     const mainComments = commentsArray.filter((c) => c.parentCommentId === 0);
@@ -56,20 +54,49 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
   const loadComments = async () => {
     try {
       setLoading(true);
-      const response = await fetchComments(productId);
-      if (response?.data?.$values) {
-        const organizedComments = organizeComments(response.data.$values);
+      const response = await fetchComments(productCode);
+  
+      if (Array.isArray(response)) {
+        setComments(response);
+        setDisplayedComments(response.slice(0, INITIAL_COMMENT_COUNT));
+        setError(null);
+      } else if (response?.data?.$values) {
+        const organizedComments = buildCommentTree(response.data.$values);
         setComments(organizedComments);
         setDisplayedComments(organizedComments.slice(0, INITIAL_COMMENT_COUNT));
+        setError(null);
       } else {
         setError("Unexpected response format.");
+        console.error("Unexpected response format:", response);
       }
     } catch (error) {
       setError("Unable to load comments.");
+      console.error("Error fetching comments:", error);
     } finally {
       setLoading(false);
     }
   };
+  
+  
+  const buildCommentTree = (comments) => {
+    const commentMap = {};
+    const roots = [];
+  
+    comments.forEach((comment) => {
+      commentMap[comment.id] = { ...comment, replies: [] };
+    });
+  
+    comments.forEach((comment) => {
+      if (comment.parentCommentId === 0) {
+        roots.push(commentMap[comment.id]);
+      } else if (commentMap[comment.parentCommentId]) {
+        commentMap[comment.parentCommentId].replies.push(commentMap[comment.id]);
+      }
+    });
+  
+    return roots;
+  };
+  
 
   const handlePostComment = async () => {
     if (newComment.trim().length === 0) {
@@ -85,7 +112,7 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
     }
 
     try {
-      const newCommentResponse = await postComment(productId, newComment);
+      const newCommentResponse = await postComment(productCode, newComment);
       setComments((prevComments) => [newCommentResponse.data, ...prevComments]);
       setDisplayedComments((prevDisplayed) => [
         newCommentResponse.data,
@@ -178,115 +205,10 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
 
   };
 
-  const handleReplyComment = async (parentCommentId) => {
-    if (replyText.trim().length === 0) {
-      Alert.alert("Lỗi", "Vui lòng nhập nội dung trả lời.");
-      return;
-    }
-  
-    if (!isLoggedIn) {
-      Alert.alert("Lỗi", "Vui lòng đăng nhập để trả lời bình luận.");
-      return;
-    }
-  
-    try {
-      const newReply = await replyComment(productId, parentCommentId, replyText);
-  
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.id === parentCommentId
-            ? { ...comment, replies: [...(comment.replies || []), newReply.data] }
-            : comment
-        )
-      );
-  
-      setReplyingCommentId(null);
-      setReplyText("");
-      ToastAndroid.show("Trả lời bình luận thành công!", ToastAndroid.SHORT);
-    } catch (error) {
-      Alert.alert("Lỗi", "Không thể trả lời bình luận. Vui lòng thử lại.");
-      console.error("Error posting reply:", error.response || error.message);
-    }
-  };
-
-  const startReplying = (commentId) => {
-    setReplyingCommentId(commentId);
-    setReplyText("");
-  };
 
   const handleLoadMore = () => {
     const newCount = displayedComments.length + LOAD_MORE_COUNT;
     setDisplayedComments(comments.slice(0, newCount));
-  };
-
-  const renderReplyItem = (reply) => {
-    const isOwner = reply.userId === currentUserId;
-    const isEditing = editingReplyId === reply.id;
-
-    return  <View key={reply.id} style={styles.replyItem}>
-      <View style={styles.replyHeader}>
-        <Text style={styles.replyAuthor}>{reply.username || "Unknown User"}</Text>
-        <Text style={styles.replyDate}>
-          {reply.createdAt ? new Date(reply.createdAt).toLocaleString() : "Unknown Date"}
-        </Text>
-      </View>
-      {isEditing ? (
-          <TextInput
-            style={styles.editInput}
-            value={replyText}
-            onChangeText={setReplyText}
-            multiline
-          />
-        ) : (
-          <Text style={styles.commentContent}>
-            {reply.content || "No content available"}
-          </Text>
-      )}
-      <View style={styles.commentActions}>
-        {isOwner && !isEditing && (
-          <>
-            {/* <TouchableOpacity
-              onPress={() => {
-                setEditingReplyId(reply.id);
-                setReplyText(reply.content);
-              }}
-              style={styles.actionButton}
-            >
-              <Ionicons name="pencil-outline" size={16} color="#007AFF" />
-              <Text style={styles.actionText}>Sửa</Text>
-            </TouchableOpacity> */}
-            <TouchableOpacity
-              onPress={() => confirmDeleteComment(reply.id)}
-              style={styles.actionButton}
-            >
-              <Ionicons name="trash-outline" size={16} color="#007AFF" />
-              <Text style={styles.actionText}>Xóa</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        {isEditing && (
-          <>
-            <TouchableOpacity
-              onPress={() => {
-                handleEditComment(reply.id, replyText, 'child', reply)
-              }}
-              style={styles.actionButton}
-            >
-              <Text style={styles.actionText}>Lưu</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setEditingCommentId(null);
-                setEditingText("");
-              }}
-              style={styles.actionButton}
-            >
-              <Text style={styles.actionText}>Hủy</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </View>
   };
 
   const renderCommentItem = ({ item }) => {
@@ -297,7 +219,7 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
       <View style={styles.commentItem}>
         <View style={styles.commentHeader}>
           <Text style={styles.commentAuthor}>
-            {item.username || "Unknown User"}
+            {item.fullName || "Unknown User"}
           </Text>
           <Text style={styles.commentDate}>
             {item.createdAt
@@ -321,16 +243,7 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
           <View style={styles.commentActions}>
             {isOwner && !isEditing && (
               <>
-                {/* <TouchableOpacity
-                  onPress={() => {
-                    setEditingCommentId(item.id);
-                    setEditingText(item.content);
-                  }}
-                  style={styles.actionButton}
-                >
-                  <Ionicons name="pencil-outline" size={16} color="#007AFF" />
-                  <Text style={styles.actionText}>Sửa</Text>
-                </TouchableOpacity> */}
+               
                 <TouchableOpacity
                   onPress={() => confirmDeleteComment(item.id)}
                   style={styles.actionButton}
@@ -368,28 +281,8 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
             </TouchableOpacity> */}
           </View>
         )}
-        {item.replies && item.replies.length > 0 && (
-          <View style={styles.repliesContainer}>
-            {item.replies.map(renderReplyItem)}
-          </View>
-        )}
-        {replyingCommentId === item.id && (
-          <View style={styles.replyInputContainer}>
-            <TextInput
-              style={styles.replyInput}
-              placeholder="Nhập nội dung trả lời..."
-              value={replyText}
-              onChangeText={setReplyText}
-              multiline
-            />
-            <TouchableOpacity
-              onPress={() => handleReplyComment(item.id)}
-              style={styles.sendReplyButton}
-            >
-              <Ionicons name="send" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        )}
+      
+        
       </View>
     );
   };
@@ -405,10 +298,10 @@ const Comment = ({ productId, isLoggedIn, currentUserId }) => {
         <Text style={styles.noComments}>Không có bình luận nào</Text>
       ) : (
         <FlatList
-          data={displayedComments.filter((item) => item && item.productId)}
+          data={displayedComments.filter((item) => item && item.productCode)}
           renderItem={renderCommentItem}
           keyExtractor={(item) =>
-            item.productId ? `${item.productId}-${item.id}` : `${item.id}`
+            item.productCode ? `${item.productCode}-${item.id}` : `${item.id}`
           }
           contentContainerStyle={styles.commentList}
         />
