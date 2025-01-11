@@ -35,6 +35,7 @@ const OrderMethod = ({
 
         const statusPromises = branchData.map(async (branch) => {
           const products = await fetchProductsbyBranch(branch.id);
+
           const isAvailable = products.some(
             (product) => product.availableQuantity > 0
           );
@@ -90,7 +91,7 @@ const OrderMethod = ({
 
         {selectedOption === "HOME_DELIVERY" && (
           user ? <View></View> : <View style={styles.deliveryContainer}>
-          <AddressForm onAddressChange={handleAddressChange} />
+            <AddressForm onAddressChange={handleAddressChange} />
           </View>
         )}
 
@@ -117,7 +118,7 @@ const OrderMethod = ({
                   styles.branchItem,
                   selectedBranchId === item.id && styles.selectedBranchItem,
                   branchStatus[item.id] === "Hết hàng" &&
-                    styles.disabledBranchItem,
+                  styles.disabledBranchItem,
                 ]}
                 onPress={() =>
                   branchStatus[item.id] !== "Hết hàng" &&

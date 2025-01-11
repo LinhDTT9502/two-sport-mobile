@@ -52,6 +52,7 @@ export default function Checkout({ route }) {
   const [gender, setGender] = useState("");
   const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
@@ -72,21 +73,39 @@ export default function Checkout({ route }) {
     }
   }, [selectedCartItems]);
 
+  const fetchBranches = async () => {
+    try {
+      const branchData = await fetchBranchs();
+      setBranches(branchData);
+    } catch (error) {
+      console.error("Error fetching branches or shipments:", error);
+      Alert.alert("Error", "Unable to fetch delivery data.");
+    }
+  };
+
+  const fetchShipments = async () => {
+    try {
+      setIsLoading(true);
+      console.log(isLoading);
+
+      const token = await AsyncStorage.getItem("token");
+      const shipmentData = await getUserShipmentDetails(token);
+      setShipments(shipmentData);
+      dispatch(setShipment(shipmentData[0]));
+    } catch (error) {
+      console.error("Error fetching branches or shipments:", error);
+      Alert.alert("Error", "Unable to fetch delivery data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  console.log(shipments);
+
+
   useEffect(() => {
-    const fetchBranchesAndShipments = async () => {
-      try {
-        const branchData = await fetchBranchs();
-        setBranches(branchData);
-        const token = await AsyncStorage.getItem("token");
-        const shipmentData = await getUserShipmentDetails(token);
-        setShipments(shipmentData);
-        dispatch(setShipment(shipmentData[0]));
-      } catch (error) {
-        console.error("Error fetching branches or shipments:", error);
-        Alert.alert("Error", "Unable to fetch delivery data.");
-      }
-    };
-    fetchBranchesAndShipments();
+    fetchBranches();
+    fetchShipments();
   }, [dispatch]);
 
   const handleOptionChange = (option) => {
@@ -133,125 +152,128 @@ export default function Checkout({ route }) {
     </View>
   );
 
-const renderDeliveryOptions = () => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>Phương thức giao hàng</Text>
-    <TouchableOpacity
-      style={[
-        styles.radioOption,
-        selectedOption === "HOME_DELIVERY" && styles.selectedOption,
-      ]}
-      onPress={() => handleOptionChange("HOME_DELIVERY")}
-    >
-      <Ionicons
-        name={
-          selectedOption === "HOME_DELIVERY"
-            ? "checkmark-circle"
-            : "ellipse-outline"
-        }
-        size={24}
-        color={COLORS.primary}
-      />
-      <Text style={styles.optionText}>Giao tận nhà</Text>
-    </TouchableOpacity>
-    {selectedOption === "HOME_DELIVERY" && (
-      <View style={styles.deliveryDetails}>
-        {/* Nút mở modal chọn địa chỉ */}
-        <TouchableOpacity
-          style={styles.selectButton}
-          onPress={() => setIsAddressModalVisible(true)}
-        >
-          <Text style={styles.selectButtonText}>
-            {shipment
-              ? `Địa chỉ đã chọn: ${shipment.address}`
-              : "Chọn địa chỉ của bạn"}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Nút thêm địa chỉ mới */}
-        <AddShipment />
-      </View>
-    )}
-    <TouchableOpacity
-      style={[
-        styles.radioOption,
-        selectedOption === "STORE_PICKUP" && styles.selectedOption,
-      ]}
-      onPress={() => handleOptionChange("STORE_PICKUP")}
-    >
-      <Ionicons
-        name={
-          selectedOption === "STORE_PICKUP"
-            ? "checkmark-circle"
-            : "ellipse-outline"
-        }
-        size={24}
-        color={COLORS.primary}
-      />
-      <Text style={styles.optionText}>Nhận tại cửa hàng</Text>
-    </TouchableOpacity>
-    {selectedOption === "STORE_PICKUP" && (
-      <View>
-        {branches.map((branch) => (
+  const renderDeliveryOptions = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Phương thức giao hàng</Text>
+      <TouchableOpacity
+        style={[
+          styles.radioOption,
+          selectedOption === "HOME_DELIVERY" && styles.selectedOption,
+        ]}
+        onPress={() => handleOptionChange("HOME_DELIVERY")}
+      >
+        <Ionicons
+          name={
+            selectedOption === "HOME_DELIVERY"
+              ? "checkmark-circle"
+              : "ellipse-outline"
+          }
+          size={24}
+          color={COLORS.primary}
+        />
+        <Text style={styles.optionText}>Giao tận nhà</Text>
+      </TouchableOpacity>
+      {selectedOption === "HOME_DELIVERY" && (
+        <View style={styles.deliveryDetails}>
+          {/* Nút mở modal chọn địa chỉ */}
           <TouchableOpacity
-            key={branch.id}
-            style={[
-              styles.radioOption,
-              selectedBranchId === branch.id && styles.selectedOption,
-            ]}
-            onPress={() => setSelectedBranchId(branch.id)}
+            style={styles.selectButton}
+            onPress={() => setIsAddressModalVisible(true)}
           >
-            <Text>{branch.branchName}</Text>
-            <Text>{branch.location}</Text>
+            <Text style={styles.selectButtonText}>
+              {shipment
+                ? `Địa chỉ đã chọn: ${shipment.address}`
+                : "Chọn địa chỉ của bạn"}
+            </Text>
           </TouchableOpacity>
-        ))}
-      </View>
-    )}
-  </View>
-);
 
-
-const renderAddressModal = () => (
-  <Modal
-    visible={isAddressModalVisible}
-    animationType="slide"
-    transparent={true}
-    onRequestClose={() => setIsAddressModalVisible(false)}
-  >
-    <View style={styles.modalContainer}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Chọn địa chỉ</Text>
-        <ScrollView>
-          {shipments.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.addressOption,
-                shipment?.id === item.id && styles.selectedAddressOption,
-              ]}
-              onPress={() => {
-                // console.log("Selected Address:", item);
-                dispatch(setShipment(item));
-                setIsAddressModalVisible(false);
-              }}
-            >
-              <Text style={styles.addressText}>{item.fullName}</Text>
-              <Text style={styles.addressText}>{item.address}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Nút thêm địa chỉ mới */}
+          <AddShipment />
+        </View>
+      )}
+      <TouchableOpacity
+        style={[
+          styles.radioOption,
+          selectedOption === "STORE_PICKUP" && styles.selectedOption,
+        ]}
+        onPress={() => handleOptionChange("STORE_PICKUP")}
+      >
+        <Ionicons
+          name={
+            selectedOption === "STORE_PICKUP"
+              ? "checkmark-circle"
+              : "ellipse-outline"
+          }
+          size={24}
+          color={COLORS.primary}
+        />
+        <Text style={styles.optionText}>Nhận tại cửa</Text>
+      </TouchableOpacity>
+      {selectedOption === "STORE_PICKUP" && (
+        <ScrollView style={{ maxHeight: 200 }}>
+          <View>
+            {branches.map((branch) => (
+              <TouchableOpacity
+                key={branch.id}
+                style={[
+                  styles.radioOption,
+                  selectedBranchId === branch.id && styles.selectedOption,
+                ]}
+                onPress={() => setSelectedBranchId(branch.id)}
+              >
+                <Text>{branch.branchName}</Text>
+                <Text>{branch.location}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </ScrollView>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => setIsAddressModalVisible(false)}
-        >
-          <Text style={styles.closeButtonText}>Đóng</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-);
+      )}
 
-  
+    </View>
+  );
+
+
+  const renderAddressModal = () => (
+    <Modal
+      visible={isAddressModalVisible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setIsAddressModalVisible(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Chọn địa chỉ</Text>
+          <ScrollView>
+            {shipments.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.addressOption,
+                  shipment?.id === item.id && styles.selectedAddressOption,
+                ]}
+                onPress={() => {
+                  // console.log("Selected Address:", item);
+                  dispatch(setShipment(item));
+                  setIsAddressModalVisible(false);
+                }}
+              >
+                <Text style={styles.addressText}>{item.fullName}</Text>
+                <Text style={styles.addressText}>{item.address}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setIsAddressModalVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>Đóng</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+
 
   const renderGenderModal = () => (
     <Modal
@@ -297,6 +319,16 @@ const renderAddressModal = () => (
       </View>
     </Modal>
   );
+
+  if (isLoading) {
+    // Show loading indicator if loading is true
+    return (
+      <View style={styles.loadingOverlay}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>Đang xử lí...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -347,6 +379,13 @@ const renderAddressModal = () => (
       </ScrollView>
       {renderAddressModal()}
       {renderGenderModal()}
+      {/* Render Loading Spinner */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Đang xử lý...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

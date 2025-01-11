@@ -60,7 +60,7 @@ function SelectPayment({ route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  useEffect(() => {}, [status, showExtendedModal]);
+  useEffect(() => { }, [status, showExtendedModal]);
 
   const handleCheck = async () => {
     if (paymentCompleted) {
@@ -73,17 +73,17 @@ function SelectPayment({ route }) {
 
         const data = order.rentalOrderCode
           ? await selectRentalCheckout({
-              paymentMethodID: selectedOption,
-              orderId: order.id,
-              orderCode: order.rentalOrderCode || order.saleOrderCode,
-              ..._d,
-            })
+            paymentMethodID: selectedOption,
+            orderId: order.id,
+            orderCode: order.rentalOrderCode || order.saleOrderCode,
+            ..._d,
+          })
           : await selectCheckout({
-              paymentMethodID: parseInt(selectedOption),
-              orderId: order.id,
-              orderCode: order.saleOrderCode,
-              ..._d,
-            });
+            paymentMethodID: parseInt(selectedOption),
+            orderId: order.id,
+            orderCode: order.saleOrderCode,
+            ..._d,
+          });
         setPaymentCompleted(true);
         navigation.navigate("AfterPayment");
       } else if (selectedOption === "2" || selectedOption === "3") {
@@ -91,17 +91,17 @@ function SelectPayment({ route }) {
         const data =
           order.rentalOrderCode || order.rentalOrderCode === order.saleOrderCode
             ? await selectRentalCheckout({
-                paymentMethodID: parseInt(selectedOption),
-                orderID: order.id,
-                orderCode: order.rentalOrderCode,
-                ..._d,
-              })
+              paymentMethodID: parseInt(selectedOption),
+              orderID: order.id,
+              orderCode: order.rentalOrderCode,
+              ..._d,
+            })
             : await selectCheckout({
-                paymentMethodID: parseInt(selectedOption),
-                orderId: order.id,
-                orderCode: order.saleOrderCode,
-                ..._d,
-              });
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.saleOrderCode,
+              ..._d,
+            });
 
         if (data?.data?.data?.paymentLink) {
           setLinkPayment(data.data.data.paymentLink);
@@ -124,17 +124,17 @@ function SelectPayment({ route }) {
         // Bank Transfer
         const data = order.rentalOrderCode
           ? await selectRentalCheckout({
-              paymentMethodID: parseInt(selectedOption),
-              orderId: order.id,
-              orderCode: order.rentalOrderCode || order.saleOrderCode,
-              ..._d,
-            })
+            paymentMethodID: parseInt(selectedOption),
+            orderId: order.id,
+            orderCode: order.rentalOrderCode || order.saleOrderCode,
+            ..._d,
+          })
           : await selectCheckout({
-              paymentMethodID: parseInt(selectedOption),
-              orderId: order.id,
-              orderCode: order.saleOrderCode,
-              ..._d,
-            });
+            paymentMethodID: parseInt(selectedOption),
+            orderId: order.id,
+            orderCode: order.saleOrderCode,
+            ..._d,
+          });
         setPaymentCompleted(true);
         Alert.alert(
           "Thanh toán thành công",
@@ -166,8 +166,7 @@ function SelectPayment({ route }) {
       if (order.saleOrderCode) {
         console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
         const response = await axios.post(
-          `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
-            order.id
+          `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
           {
@@ -178,8 +177,7 @@ function SelectPayment({ route }) {
         );
       } else if (order.rentalOrderCode) {
         const response = await axios.post(
-          `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
-            order.id
+          `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
           {
@@ -192,7 +190,7 @@ function SelectPayment({ route }) {
 
       setStatus("Đã hủy");
       setReason("");
-      setShowModal(false); 
+      setShowModal(false);
       Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
 
     } catch (error) {
@@ -289,7 +287,7 @@ function SelectPayment({ route }) {
         Math.ceil(
           (new Date(selectedDate) -
             new Date(selectedChildOrder.rentalEndDate)) /
-            (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24)
         ) + 1;
 
       const payload = {
@@ -321,6 +319,28 @@ function SelectPayment({ route }) {
       alert("Failed to request extension.");
     }
   };
+
+  const totalAmount = order.saleOrderDetailVMs.$values.reduce(
+    (sum, item) => sum + item.totalAmount,
+    0
+  );
+
+  // Determine the transport fee value dynamically
+  let transportFeeValue = null;
+
+  if (order.deliveryMethod === "Giao hàng tận nơi") {
+    if (totalAmount < 2000000) {
+      if (order.tranSportFee == 0) {
+        transportFeeValue = "2Sport sẽ liên hệ sau";
+      } else {
+        transportFeeValue = order.tranSportFee;
+      }
+    } else {
+      transportFeeValue = "Miễn phí";
+    }
+  } else {
+    transportFeeValue = `${order.tranSportFee.toLocaleString("vi-VN")}₫`;
+  }
 
   return (
     <View style={styles.container}>
@@ -536,9 +556,7 @@ function SelectPayment({ route }) {
                   key={item?.id}
                   style={{
                     flexDirection: "column",
-                    gap: 8,
-                    paddingBottom: 10,
-                    marginBottom: 20,
+                    paddingBottom: 20,
                     borderBottom: "0.5px solid #e0e0e0",
                   }}
                 >
@@ -563,12 +581,12 @@ function SelectPayment({ route }) {
                         <Text style={styles.itemName2}>
                           Tình trạng: {_item.condition}%
                         </Text>
+                        <Text style={styles.itemName2}>
+                          Đơn giá: {formatCurrency(_item.unitPrice || _item.subTotal)}
+                        </Text>
                       </View>
                       <Text style={styles.itemQuantity}>
                         x{_item?.quantity}
-                      </Text>
-                      <Text style={styles.itemPrice}>
-                        {formatCurrency(_item.unitPrice || _item.subTotal)}
                       </Text>
                     </View>
                   </View>
@@ -635,21 +653,25 @@ function SelectPayment({ route }) {
             })}
             <TotalItem
               label="Tổng cộng"
-              value={order.totalAmount.toLocaleString("vi-VN") + "₫"}
+              value={totalAmount.toLocaleString("vi-VN") + "₫"}
             />
-            <TotalItem
-              label="Phí vận chuyển"
-              value={
-                order.tranSportFee === 0
-                  ? "Miễn phí"
-                  : `${order.tranSportFee.toLocaleString("vi-VN")} ₫`
-              }
-            />
+            {
+              order.deliveryMethod === "Giao hàng tận nơi" && (
+                <TotalItem
+                  label="Phí vận chuyển"
+                  value={
+                    typeof transportFeeValue === "number"
+                      ? transportFeeValue.toLocaleString("vi-VN") + "₫"
+                      : transportFeeValue // If it's a string, use it directly
+                  }
+                />
+              )
+            }
 
             <TotalItem
               label="Thành tiền"
               value={
-                (order.totalAmount + order.tranSportFee).toLocaleString(
+                (totalAmount + order.tranSportFee).toLocaleString(
                   "vi-VN"
                 ) + "₫"
               }
@@ -768,7 +790,7 @@ function SelectPayment({ route }) {
         {order?.rentalOrderCode ? (
           <>
             {(order.orderStatus !== "Đã hủy" || status === "Đã hủy") &&
-            order?.depositStatus === "N/A" ? (
+              order?.depositStatus === "N/A" ? (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đặt cọc</Text>
                 {[
@@ -789,7 +811,7 @@ function SelectPayment({ route }) {
                           style={[
                             styles.optionText,
                             selectedOption === item.value &&
-                              styles.selectedOptionText,
+                            styles.selectedOptionText,
                             paymentCompleted && styles.disabledOptionText,
                           ]}
                         >
@@ -797,12 +819,12 @@ function SelectPayment({ route }) {
                         </Text>
                       </View>
                       {!order?.depositStatus ||
-                      order?.depositStatus === "N/A" ? (
+                        order?.depositStatus === "N/A" ? (
                         <View
                           style={[
                             styles.radioButton,
                             deposit === item.value &&
-                              styles.selectedRadioButton,
+                            styles.selectedRadioButton,
                           ]}
                         >
                           {deposit === item.value && (
@@ -970,7 +992,7 @@ const styles = StyleSheet.create({
   },
   cardItem: {
     flexDirection: "row",
-    gap: 20,
+    gap: 10,
   },
   infoItem: {
     flexDirection: "row",
@@ -1001,7 +1023,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
-    width: "80%",
+    width: "70%",
+    paddingRigh: 0,
+    marginRight: 0,
   },
   itemName2: {
     flex: 1,
@@ -1265,6 +1289,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
+    width: "80%"
   },
   infoLabel: {
     fontSize: 14,

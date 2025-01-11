@@ -43,6 +43,7 @@ const MyOrder = ({ route }) => {
     { label: "Chờ xử lý", value: "Chờ xử lý" },
     { label: "Đã xác nhận", value: "Đã xác nhận" },
     { label: "Đã giao cho ĐVVC", value: "Đã giao cho ĐVVC" },
+    { label: "Đã giao hàng", value: "Đã giao hàng" },
 
     { label: "Đã hoàn thành", value: "Đã hoàn thành" },
 
@@ -84,8 +85,8 @@ const MyOrder = ({ route }) => {
         setOrders(
           type === "rent"
             ? ordersData?.data?.data?.["$values"]?.sort((a, b) => {
-                return new Date(b.createdAt) - new Date(a.createdAt);
-              }) || []
+              return new Date(b.createdAt) - new Date(a.createdAt);
+            }) || []
             : ordersData
         );
         console.log(ordersData);
@@ -106,8 +107,8 @@ const MyOrder = ({ route }) => {
         setOrders(
           type === "rent"
             ? ordersData?.data?.data?.["$values"]?.sort((a, b) => {
-                return new Date(b.createdAt) - new Date(a.createdAt);
-              }) || []
+              return new Date(b.createdAt) - new Date(a.createdAt);
+            }) || []
             : ordersData
         );
       }
