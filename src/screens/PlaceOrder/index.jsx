@@ -29,7 +29,7 @@ import {
 import OrderMethod from "../../components/Payment/OrderMethod";
 import { useFocusEffect } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
 import { selectUser } from "../../redux/slices/authSlice";
 const COLORS = {
   primary: "#3366FF",
@@ -44,7 +44,9 @@ export default function PlaceOrderScreen({ route }) {
   const { selectedCartItems, type } = route.params || { selectedCartItems: [] };
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [cartItems, setCartItems] = useState(selectedCartItems || useSelector(selectCartItems))
+  const [cartItems, setCartItems] = useState(
+    selectedCartItems || useSelector(selectCartItems)
+  );
   const userLogin = useSelector(selectUser);
   const shipment = useSelector((state) => state.shipment || {});
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -53,7 +55,11 @@ export default function PlaceOrderScreen({ route }) {
   const [selectedOption, setSelectedOption] = useState("HOME_DELIVERY");
   const [selectedBranchId, setSelectedBranchId] = useState(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
-  const [dateSelected, setDateSelected] = useState({ start: null, end: null, count: 0})
+  const [dateSelected, setDateSelected] = useState({
+    start: null,
+    end: null,
+    count: 0,
+  });
   const [note, setNote] = useState("");
   const [isGuest, setIsGuest] = useState(false);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -67,7 +73,7 @@ export default function PlaceOrderScreen({ route }) {
     shipmentDetailID: "",
     userId: userLogin?.UserId || 0,
   });
-  
+
   // useFocusEffect(
   //   React.useCallback(() => {
   //     Alert.alert("Cảnh báo", "Bạn không thể quay lại để đặt hàng lại.", [
@@ -132,9 +138,13 @@ export default function PlaceOrderScreen({ route }) {
   };
 
   const totalPrice = cartItems.reduce(
-    (acc, item) => acc + (type === 'buy' ? item.price * item.quantity : item.rentPrice * item.quantity * (item?.dateSelected?.count || 1) ) ,
+    (acc, item) =>
+      acc +
+      (type === "buy"
+        ? item.price * item.quantity
+        : item.rentPrice * item.quantity * (item?.dateSelected?.count || 1)),
     0
-  )
+  );
 
   useEffect(() => {
     const loadCart = async () => {};
@@ -179,39 +189,53 @@ export default function PlaceOrderScreen({ route }) {
       address,
     }));
   };
-  
-  const handleConfirm = (_, val) => {
-    const data = JSON.parse(JSON.stringify(cartItems))
 
-    const [key, index] = isDatePickerVisible.split('-')
-    if (!data?.[index]?.['dateSelected']) {
-      data[index]['dateSelected'] = {}
+  const handleConfirm = (_, val) => {
+    const data = JSON.parse(JSON.stringify(cartItems));
+    const [key, index] = isDatePickerVisible.split("-");
+
+    if (key === "start") {
+      // Apply the selected start date to all products
+      data.forEach((item, idx) => {
+        if (!item.dateSelected) {
+          item.dateSelected = {};
+        }
+        item.dateSelected.start = val;
+        item.dateSelected.end = null; // Reset end date when start date changes
+        item.dateSelected.count = 0;
+      });
+    } else if (key === "end") {
+      if (!data[index].dateSelected) {
+        data[index].dateSelected = {};
+      }
+      data[index].dateSelected.end = val;
     }
-    if (key === 'start') {
-      data[index]['dateSelected']['end'] = null
+
+    // Recalculate count for the item with end date
+    if (data[index].dateSelected.start && data[index].dateSelected.end) {
+      data[index].dateSelected.count = dayjs(data[index].dateSelected.end).diff(dayjs(data[index].dateSelected.start), "day");
     }
-    data[index]['dateSelected'][key] = val
-    if (data?.[index]?.['dateSelected']?.start &&  data?.[index]?.['dateSelected']?.end) {
-      data[index]['dateSelected'].count = dayjs(data?.[index]?.['dateSelected']?.end).diff(dayjs(data?.[index]?.['dateSelected']?.start), 'day')
-    }
-    setCartItems(data)
-    setDatePickerVisibility(false)
+
+    setCartItems(data);
+    setDatePickerVisibility(false);
   };
 
   const renderCustomerInfo = () => {
     if (isGuest) {
       return (
         <View style={styles.sectionContainer}>
-          <View style={{ flexDirection: 'row', gap: 16, marginBottom: 12 }}>
+          <View style={{ flexDirection: "row", gap: 16, marginBottom: 12 }}>
             {[
               { title: "Anh", value: "male" },
               { title: "Chị", value: "female" },
             ].map((item) => {
-              const isSelected = userData?.gender === item.value
+              const isSelected = userData?.gender === item.value;
               return (
                 <View>
                   <TouchableOpacity
-                    onPress={() => setUserData(pre => ({...pre, gender: item.value}))}
+                    onPress={() =>
+                      setUserData((pre) => ({ ...pre, gender: item.value }))
+                    }
                     style={[
                       styles.optionContainer,
                       isSelected && styles.selectedOption,
@@ -223,9 +247,7 @@ export default function PlaceOrderScreen({ route }) {
                         isSelected && styles.selectedRadioButton,
                       ]}
                     >
-                      {isSelected && (
-                        <View style={styles.selectedDot} />
-                      )}
+                      {isSelected && <View style={styles.selectedDot} />}
                     </View>
                     <View style={styles.optionContent}>
                       <Text
@@ -276,16 +298,18 @@ export default function PlaceOrderScreen({ route }) {
     } else {
       return (
         <View style={styles.sectionContainer}>
-          <View style={{ flexDirection: 'row', gap: 16, marginBottom: 12 }}>
+          <View style={{ flexDirection: "row", gap: 16, marginBottom: 12 }}>
             {[
               { title: "Anh", value: "male" },
               { title: "Chị", value: "female" },
             ].map((item) => {
-              const isSelected = userData?.gender === item.value
+              const isSelected = userData?.gender === item.value;
               return (
                 <View>
                   <TouchableOpacity
-                    onPress={() => setUserData(pre => ({...pre, gender: item.value}))}
+                    onPress={() =>
+                      setUserData((pre) => ({ ...pre, gender: item.value }))
+                    }
                     style={[
                       styles.optionContainer,
                       isSelected && styles.selectedOption,
@@ -297,9 +321,7 @@ export default function PlaceOrderScreen({ route }) {
                         isSelected && styles.selectedRadioButton,
                       ]}
                     >
-                      {isSelected && (
-                        <View style={styles.selectedDot} />
-                      )}
+                      {isSelected && <View style={styles.selectedDot} />}
                     </View>
                     <View style={styles.optionContent}>
                       <Text
@@ -316,31 +338,37 @@ export default function PlaceOrderScreen({ route }) {
               );
             })}
           </View>
-          {selectedOption !== 'STORE_PICKUP' ? <View>
-            {userData.shipmentDetailID ? (
-            <View style={styles.selectedShipment}>
-              <Text style={styles.selectedTitle}>Địa chỉ đã chọn:</Text>
-              <Text style={styles.selectedText}>{userData.fullName}</Text>
-              <Text style={styles.selectedText}>{userData.phoneNumber}</Text>
-              <Text style={styles.selectedText}>{userData.address}</Text>
-              <Text style={styles.selectedText}>{userData.email}</Text>
+          {selectedOption !== "STORE_PICKUP" ? (
+            <View>
+              {userData.shipmentDetailID ? (
+                <View style={styles.selectedShipment}>
+                  <Text style={styles.selectedTitle}>Địa chỉ đã chọn:</Text>
+                  <Text style={styles.selectedText}>{userData.fullName}</Text>
+                  <Text style={styles.selectedText}>
+                    {userData.phoneNumber}
+                  </Text>
+                  <Text style={styles.selectedText}>{userData.address}</Text>
+                  <Text style={styles.selectedText}>{userData.email}</Text>
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>
+                  Chưa có địa chỉ nào được chọn.
+                </Text>
+              )}
+              <TouchableOpacity
+                style={styles.changeAddressButton}
+                onPress={() => setIsModalVisible(true)}
+              >
+                <Text style={styles.changeAddressText}>
+                  {userData.shipmentDetailID
+                    ? "Chọn địa chỉ khác"
+                    : "Chọn địa chỉ giao hàng"}
+                </Text>
+              </TouchableOpacity>
             </View>
           ) : (
-            <Text style={styles.emptyText}>Chưa có địa chỉ nào được chọn.</Text>
+            <View></View>
           )}
-          <TouchableOpacity
-            style={styles.changeAddressButton}
-            onPress={() => setIsModalVisible(true)}
-          >
-            <Text style={styles.changeAddressText}>
-              {userData.shipmentDetailID
-                ? "Chọn địa chỉ khác"
-                : "Chọn địa chỉ giao hàng"}
-            </Text>
-          </TouchableOpacity>
-          </View> : <View></View>}
-
-          
         </View>
       );
     }
@@ -351,43 +379,82 @@ export default function PlaceOrderScreen({ route }) {
       title: "Tóm tắt đơn hàng",
       data: cartItems,
       renderItem: ({ item, index }) => {
-        return <View style={styles.productItem}>
-          	<Image source={{ uri: item.imgAvatarPath }} style={styles.image} />
-          	<View style={styles.productDetails}>
-            	<Text style={styles.productName}>{item.productName} - {item.color} - {item.condition}%</Text>
+        return (
+          <View style={styles.productItem}>
+            <Image source={{ uri: item.imgAvatarPath }} style={styles.image} />
+            <View style={styles.productDetails}>
+              <Text style={styles.productName}>
+                {item.productName} - {item.color} - {item.condition}%
+              </Text>
               <Text style={styles.productQuantity}>
-              	Kích thước: {item.size}
-            	</Text>
-            	<Text style={styles.productQuantity}>
-              	Số lượng: {item.quantity}
-            	</Text>
-            	<Text style={styles.productPrice}>
-              	{formatCurrency(type === 'buy' ? item.price : item.rentPrice)}
-            </Text>
-            {type === 'rent' ? <View>
-              <TouchableOpacity style={styles.dateButton} onPress={() => setDatePickerVisibility('start' + '-' + index)}>
-              <Ionicons name="calendar-outline" size={20} color="#3366FF" /><Text style={styles.dateText}>Ngày bắt đầu: {item?.dateSelected?.start ? dayjs(item?.dateSelected?.start).format('DD/MM/YYYY') : 'Chọn ngày'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.dateButton}  onPress={() => setDatePickerVisibility('end' + '-' + index)}>
-              <Ionicons name="calendar-outline" size={20} color="#3366FF" />
-              <Text style={styles.dateText}>Ngày kết thúc: {item?.dateSelected?.end ? dayjs(item?.dateSelected?.end).format('DD/MM/YYYY') : 'Chọn ngày'}</Text>
-              </TouchableOpacity>
-              {item?.dateSelected?.start && item?.dateSelected?.end && (
-        <View style={styles.totalDaysContainer}>
-          <Ionicons name="time-outline" size={20} color="#4A5568" />
-          <Text style={styles.totalDaysText}>
-            Tổng số ngày thuê: {item?.dateSelected?.count}
-          </Text>
-        </View>
-      )}
-            </View>: null}
-            <Text style={styles.productTotal}>
-              Tổng: {formatCurrency(type === 'buy' ? item.price * item.quantity : item.rentPrice * item.quantity * (item?.dateSelected?.count || 1))}
-            </Text>
-          	</View>
-        	</View>
-      	
-      }
+                Kích thước: {item.size}
+              </Text>
+              <Text style={styles.productQuantity}>
+                Số lượng: {item.quantity}
+              </Text>
+              <Text style={styles.productPrice}>
+                {formatCurrency(type === "buy" ? item.price : item.rentPrice)}
+              </Text>
+              {type === "rent" ? (
+                <View>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() =>
+                      setDatePickerVisibility("start" + "-" + index)
+                    }
+                  >
+                    <Ionicons
+                      name="calendar-outline"
+                      size={20}
+                      color="#3366FF"
+                    />
+                    <Text style={styles.dateText}>
+                      Ngày bắt đầu:{" "}
+                      {item?.dateSelected?.start
+                        ? dayjs(item?.dateSelected?.start).format("DD/MM/YYYY")
+                        : "Chọn ngày"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => setDatePickerVisibility("end" + "-" + index)}
+                  >
+                    <Ionicons
+                      name="calendar-outline"
+                      size={20}
+                      color="#3366FF"
+                    />
+                    <Text style={styles.dateText}>
+                      Ngày kết thúc:{" "}
+                      {item?.dateSelected?.end
+                        ? dayjs(item?.dateSelected?.end).format("DD/MM/YYYY")
+                        : "Chọn ngày"}
+                    </Text>
+                  </TouchableOpacity>
+                  {item?.dateSelected?.start && item?.dateSelected?.end && (
+                    <View style={styles.totalDaysContainer}>
+                      <Ionicons name="time-outline" size={20} color="#4A5568" />
+                      <Text style={styles.totalDaysText}>
+                        Tổng số ngày thuê: {item?.dateSelected?.count}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ) : null}
+              <Text style={styles.productTotal}>
+                Tổng:{" "}
+                {formatCurrency(
+                  type === "buy"
+                    ? item.price * item.quantity
+                    : item.rentPrice *
+                        item.quantity *
+                        (item?.dateSelected?.count || 1)
+                )}
+              </Text>
+            </View>
+          </View>
+        );
+      },
     },
     {
       title: "Thông tin giao hàng",
@@ -400,6 +467,7 @@ export default function PlaceOrderScreen({ route }) {
       renderItem: () => (
         <View>
           <OrderMethod
+            selectedProducts={selectedCartItems}
             userData={userData}
             setUserData={setUserData}
             selectedOption={selectedOption}
@@ -443,24 +511,35 @@ export default function PlaceOrderScreen({ route }) {
 
   const renderDataSelect = (show) => {
     if (show) {
-      const [key, index] = isDatePickerVisible.split('-')
-      const val = cartItems[index]?.dateSelected?.[key]
-      const start = cartItems[index]?.dateSelected?.start ? new Date(cartItems[index]?.dateSelected?.start) : null
-      const end = cartItems[index]?.dateSelected?.end ? new Date(cartItems[index]?.dateSelected?.end) : null
+      const [key, index] = isDatePickerVisible.split("-");
+      const val = cartItems[index]?.dateSelected?.[key];
+      const start = cartItems[index]?.dateSelected?.start
+        ? new Date(cartItems[index]?.dateSelected?.start)
+        : null;
+      const end = cartItems[index]?.dateSelected?.end
+        ? new Date(cartItems[index]?.dateSelected?.end)
+        : null;
       const today = new Date();
-      const minStart = key === 'end' ? start ?  new Date(start.setDate(start.getDate() + 1)) : new Date(today.setDate(today.getDate() + 1)): new Date(today.setDate(today.getDate() + 1))
-      return <DateTimePicker
-        mode={'date'}
-        onChange={handleConfirm}
-        locale={'vi'}
-        headerTextIOS={'Vui lòng chọn ngày'}
-        value={val ? new Date(val) : new Date()}
-        minimumDate={minStart}
-        maximumDate={key === 'start' && end ? end: null }
-      />
+      const minStart =
+        key === "end"
+          ? start
+            ? new Date(start.setDate(start.getDate() + 1))
+            : new Date(today.setDate(today.getDate() + 1))
+          : new Date(today.setDate(today.getDate() + 1));
+      return (
+        <DateTimePicker
+          mode={"date"}
+          onChange={handleConfirm}
+          locale={"vi"}
+          headerTextIOS={"Vui lòng chọn ngày"}
+          value={val ? new Date(val) : new Date()}
+          minimumDate={minStart}
+          maximumDate={key === "start" && end ? end : null}
+        />
+      );
     }
-    return null
-  }
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -752,8 +831,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
-  selectedOption: {
-  },
+  selectedOption: {},
   optionContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -802,9 +880,9 @@ const styles = StyleSheet.create({
     borderColor: "#BBBBBB",
   },
   dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EDF2F7',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EDF2F7",
     padding: 10,
     borderRadius: 6,
     marginBottom: 8,
@@ -812,17 +890,17 @@ const styles = StyleSheet.create({
   dateText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#4A5568',
+    color: "#4A5568",
   },
   totalDaysContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 4,
   },
   totalDaysText: {
     marginLeft: 8,
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2D3748',
+    fontWeight: "bold",
+    color: "#2D3748",
   },
 });

@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   View,
   Image,
   TextInput,
@@ -59,8 +60,11 @@ function SelectPayment({ route }) {
   const [selectedChildOrder, setSelectedChildOrder] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [orderData, setOrderData] = useState(order);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => { }, [status, showExtendedModal]);
+  useEffect(() => { }, [isUpdating, status, showExtendedModal]);
 
   const handleCheck = async () => {
     if (paymentCompleted) {
@@ -166,7 +170,7 @@ function SelectPayment({ route }) {
       if (order.saleOrderCode) {
         console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
         const response = await axios.post(
-          `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${order.id
+          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/request-cancel/${order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
           {
@@ -175,9 +179,10 @@ function SelectPayment({ route }) {
             },
           }
         );
+        setIsUpdating(true);
       } else if (order.rentalOrderCode) {
         const response = await axios.post(
-          `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${order.id
+          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/request-cancel/${order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
           {
@@ -187,17 +192,48 @@ function SelectPayment({ route }) {
           }
         );
       }
+      setIsUpdating(true);
+      setOrderData((prevData) => ({
+        ...prevData,
+        orderStatus: "Đã hủy",
+      }));
 
       setStatus("Đã hủy");
       setReason("");
       setShowModal(false);
       Alert.alert("Thành công", "Bạn đã hủy đơn hàng thành công.");
-
     } catch (error) {
-      console.error("Error cancel order:", error);
+      console.error("Error canceling order:", error);
       Alert.alert("Lỗi", "Không thể hủy đơn hàng. Vui lòng thử lại.");
+    } finally {
+      setIsUpdating(false);
     }
   };
+
+  const checkIsReviewed = async (saleOrderId) => {
+    try {
+      const response = await axios.get(
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/Review/check-is-review/${saleOrderId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error checking review status:", error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const fetchReviewStatus = async () => {
+      const isReviewed = await checkIsReviewed(order.id);
+      setOrderData((prevData) => ({
+        ...prevData,
+        isReviewed,
+      }));
+    };
+
+    fetchReviewStatus();
+  }, [order.id]);
+
   const handleUpdateOrderStatus = async () => {
     Alert.alert("Xác nhận", "Bạn đã nhận được hàng?", [
       {
@@ -207,12 +243,13 @@ function SelectPayment({ route }) {
       {
         text: "Xác nhận",
         onPress: async () => {
+          setIsUpdating(true);
           try {
             const newStatus = 5;
             if (order.saleOrderCode) {
               console.log(`update sale order ${order.id}`);
               const response = await axios.put(
-                `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
+                `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
                 null, // No request body
                 {
                   headers: {
@@ -221,12 +258,13 @@ function SelectPayment({ route }) {
                 }
               );
               if (response.status === 200) {
-                navigation.navigate("AddReview", { orderId: order.id });
+                // navigation.navigate("AddReview", { orderId: order.id });
+                return;
               }
             } else if (order.rentalOrderCode) {
               console.log(`update sale order ${order.id}`);
               const response = await axios.put(
-                `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
+                `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
                 null, // No request body
                 {
                   headers: {
@@ -239,9 +277,15 @@ function SelectPayment({ route }) {
             // Alert.alert("2Sport cảm ơn quý khách");
 
             setStatus("Đã giao hàng");
+            Alert.alert("Thành công", "Bạn đã xác nhận đã nhận hàng.");
+            setTimeout(() => {
+              navigation.replace("SelectPayment", { order });
+            });
           } catch (error) {
             console.error("Error cancel order:", error);
             Alert.alert("Lỗi", "Không thể xác nhận.");
+          } finally {
+            setIsUpdating(false);
           }
         },
       },
@@ -259,7 +303,7 @@ function SelectPayment({ route }) {
   const fetchParentOrderId = async (parentOrderCode) => {
     try {
       const response = await axios.get(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/get-rental-order-by-orderCode?orderCode=${parentOrderCode}`
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/get-rental-order-by-orderCode?orderCode=${parentOrderCode}`
       );
       if (response.data.isSuccess) {
         return response.data.data.id;
@@ -297,7 +341,7 @@ function SelectPayment({ route }) {
       };
 
       const response = await axios.post(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-extension`,
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/request-extension`,
         payload,
         {
           headers: {
@@ -354,6 +398,33 @@ function SelectPayment({ route }) {
         <Text style={styles.headerTitle}>Chi tiết đơn hàng </Text>
       </View>
       <View style={styles.buttonReq}>
+        {orderData.orderStatus === "Đã hoàn thành" && !orderData.isReviewed && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: orderData.isReviewed ? "#CCCCCC" : "#3366FF",
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+              borderRadius: 8,
+              marginHorizontal: 16,
+              marginTop: 8,
+              elevation: 2,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+            }}
+            onPress={() =>
+              !orderData.isReviewed &&
+              navigation.navigate("AddReview", { orderId: orderData.id })
+            }
+            disabled={orderData.isReviewed}
+          >
+            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+              {orderData.isReviewed ? "Đã đánh giá" : "Đánh giá"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {order.orderStatus === "Đã giao cho ĐVVC" && (
           <TouchableOpacity
             style={[
@@ -383,7 +454,7 @@ function SelectPayment({ route }) {
         {order.orderStatus === "Chờ xử lý" && (
           <TouchableOpacity
             style={{
-              backgroundColor: "#FF4444",
+              backgroundColor: isUpdating ? "#CCC" : "#FF4444",
               paddingVertical: 12,
               paddingHorizontal: 20,
               borderRadius: 8,
@@ -395,7 +466,8 @@ function SelectPayment({ route }) {
               shadowOpacity: 0.1,
               shadowRadius: 4,
             }}
-            onPress={() => setShowModal(true)}
+            onPress={() => !isUpdating && setShowModal(true)}
+            disabled={isUpdating}
           >
             <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
               Hủy đơn
@@ -488,7 +560,19 @@ function SelectPayment({ route }) {
         </Modal>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              setOrderData({ ...orderData });
+              setRefreshing(false);
+            }}
+          />
+        }
+      >
         {/* Customer Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
@@ -496,22 +580,22 @@ function SelectPayment({ route }) {
             <View style={styles.infoRow}>
               <Feather name="user" size={18} color="#333" />
               <Text style={styles.infoLabel}>Tên:</Text>
-              <Text style={styles.infoValue}>{order.fullName}</Text>
+              <Text style={styles.infoValue}>{orderData.fullName}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="mail" size={18} color="#333" />
               <Text style={styles.infoLabel}>Email:</Text>
-              <Text style={styles.infoValue}>{order.email}</Text>
+              <Text style={styles.infoValue}>{orderData.email}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="phone" size={18} color="#333" />
               <Text style={styles.infoLabel}>Số điện thoại:</Text>
-              <Text style={styles.infoValue}>{order.contactPhone}</Text>
+              <Text style={styles.infoValue}>{orderData.contactPhone}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="map-pin" size={18} color="#333" />
               <Text style={styles.infoLabel}>Địa chỉ:</Text>
-              <Text style={styles.infoValue}>{order.address}</Text>
+              <Text style={styles.infoValue}>{orderData.address}</Text>
             </View>
             <View style={styles.infoRow}>
               <Feather name="tag" size={18} color="#333" />
@@ -519,10 +603,10 @@ function SelectPayment({ route }) {
               <Text
                 style={[
                   styles.statusValue,
-                  styles[statusColors[status || order.orderStatus]],
+                  styles[statusColors[status || orderData.orderStatus]],
                 ]}
               >
-                {status || order.orderStatus}
+                {status || orderData.orderStatus}
               </Text>
             </View>
             <View style={styles.infoRow}>
@@ -531,10 +615,10 @@ function SelectPayment({ route }) {
               <Text
                 style={[
                   styles.paymentStatusValue,
-                  styles[paymentStatusColors[order.paymentStatus]],
+                  styles[paymentStatusColors[orderData.paymentStatus]],
                 ]}
               >
-                {order.paymentStatus}
+                {orderData.paymentStatus}
               </Text>
             </View>
           </View>
