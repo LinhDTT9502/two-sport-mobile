@@ -192,23 +192,30 @@ export default function PlaceOrderScreen({ route }) {
 
   const handleConfirm = (_, val) => {
     const data = JSON.parse(JSON.stringify(cartItems));
-
     const [key, index] = isDatePickerVisible.split("-");
-    if (!data?.[index]?.["dateSelected"]) {
-      data[index]["dateSelected"] = {};
-    }
+
     if (key === "start") {
-      data[index]["dateSelected"]["end"] = null;
+      // Apply the selected start date to all products
+      data.forEach((item, idx) => {
+        if (!item.dateSelected) {
+          item.dateSelected = {};
+        }
+        item.dateSelected.start = val;
+        item.dateSelected.end = null; // Reset end date when start date changes
+        item.dateSelected.count = 0;
+      });
+    } else if (key === "end") {
+      if (!data[index].dateSelected) {
+        data[index].dateSelected = {};
+      }
+      data[index].dateSelected.end = val;
     }
-    data[index]["dateSelected"][key] = val;
-    if (
-      data?.[index]?.["dateSelected"]?.start &&
-      data?.[index]?.["dateSelected"]?.end
-    ) {
-      data[index]["dateSelected"].count = dayjs(
-        data?.[index]?.["dateSelected"]?.end
-      ).diff(dayjs(data?.[index]?.["dateSelected"]?.start), "day");
+
+    // Recalculate count for the item with end date
+    if (data[index].dateSelected.start && data[index].dateSelected.end) {
+      data[index].dateSelected.count = dayjs(data[index].dateSelected.end).diff(dayjs(data[index].dateSelected.start), "day");
     }
+
     setCartItems(data);
     setDatePickerVisibility(false);
   };

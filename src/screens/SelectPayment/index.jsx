@@ -170,7 +170,7 @@ function SelectPayment({ route }) {
       if (order.saleOrderCode) {
         console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
         const response = await axios.post(
-          `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
+          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
             order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
@@ -183,7 +183,7 @@ function SelectPayment({ route }) {
         setIsUpdating(true);
       } else if (order.rentalOrderCode) {
         const response = await axios.post(
-          `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
+          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
             order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
@@ -212,11 +212,10 @@ function SelectPayment({ route }) {
     }
   };
 
-
   const checkIsReviewed = async (saleOrderId) => {
     try {
       const response = await axios.get(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/Review/check-is-review/${saleOrderId}`
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/Review/check-is-review/${saleOrderId}`
       );
       return response.data;
     } catch (error) {
@@ -252,7 +251,7 @@ function SelectPayment({ route }) {
             if (order.saleOrderCode) {
               console.log(`update sale order ${order.id}`);
               const response = await axios.put(
-                `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
+                `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
                 null, // No request body
                 {
                   headers: {
@@ -261,12 +260,13 @@ function SelectPayment({ route }) {
                 }
               );
               if (response.status === 200) {
-                navigation.navigate("AddReview", { orderId: order.id });
+                // navigation.navigate("AddReview", { orderId: order.id });
+                return;
               }
             } else if (order.rentalOrderCode) {
               console.log(`update sale order ${order.id}`);
               const response = await axios.put(
-                `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
+                `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
                 null, // No request body
                 {
                   headers: {
@@ -305,7 +305,7 @@ function SelectPayment({ route }) {
   const fetchParentOrderId = async (parentOrderCode) => {
     try {
       const response = await axios.get(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/get-rental-order-by-orderCode?orderCode=${parentOrderCode}`
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/get-rental-order-by-orderCode?orderCode=${parentOrderCode}`
       );
       if (response.data.isSuccess) {
         return response.data.data.id;
@@ -343,7 +343,7 @@ function SelectPayment({ route }) {
       };
 
       const response = await axios.post(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/RentalOrder/request-extension`,
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/request-extension`,
         payload,
         {
           headers: {
@@ -381,7 +381,7 @@ function SelectPayment({ route }) {
         {orderData.orderStatus === "Đã hoàn thành" && !orderData.isReviewed && (
           <TouchableOpacity
             style={{
-              backgroundColor: "#3366FF",
+              backgroundColor: orderData.isReviewed ? "#CCCCCC" : "#3366FF",
               paddingVertical: 12,
               paddingHorizontal: 20,
               borderRadius: 8,
@@ -394,11 +394,13 @@ function SelectPayment({ route }) {
               shadowRadius: 4,
             }}
             onPress={() =>
+              !orderData.isReviewed &&
               navigation.navigate("AddReview", { orderId: orderData.id })
             }
+            disabled={orderData.isReviewed}
           >
             <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
-              Đánh giá
+              {orderData.isReviewed ? "Đã đánh giá" : "Đánh giá"}
             </Text>
           </TouchableOpacity>
         )}

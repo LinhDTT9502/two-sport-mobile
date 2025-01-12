@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  "https://capstone-project-703387227873.asia-southeast1.run.app/api/Auth";
+  "https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/Auth";
 
 export const signIn = (userName, password) => {
   return axios.post(
@@ -151,7 +151,7 @@ export const sendOtpRequestMobile = ({ userName, email }) => {
 
 export const updatePasswordAPI = (userId, oldPassword, newPassword) => {
   return axios.put(
-    `https://capstone-project-703387227873.asia-southeast1.run.app/api/User/update-password/${userId}?userId=${userId}`,
+    `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/User/update-password/${userId}?userId=${userId}`,
     { oldPassword, newPassword },
     {
       headers: {

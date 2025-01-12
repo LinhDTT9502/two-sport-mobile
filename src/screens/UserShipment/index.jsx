@@ -55,6 +55,7 @@ export default function UserShipment({ navigation }) {
   // }, [dispatch]);
 
   const fetchShipments = async () => {
+    setIsLoading(true);
     const token = await AsyncStorage.getItem("token");
     try {
       if (!token) {
@@ -155,23 +156,42 @@ export default function UserShipment({ navigation }) {
         <Text style={styles.headerTitle}>My Addresses</Text>
       </View>
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFA500" />
-          <Text style={styles.loadingText}>Loading shipments...</Text>
-        </View>
-      ) : shipments.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="cube-outline" size={50} color="#CCC" />
-          <Text style={styles.emptyText}>No shipment details available</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={shipments}
-          renderItem={renderShipmentItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#FFA500" />
+    <Text style={styles.loadingText}>Loading shipments...</Text>
+  </View>
+) : shipments.length === 0 ? (
+  <View style={styles.emptyContainer}>
+    <Ionicons name="cube-outline" size={50} color="#CCC" />
+    <Text style={styles.emptyText}>No shipment details available</Text>
+  </View>
+) : (
+  <FlatList
+    data={shipments}
+    renderItem={renderShipmentItem}
+    keyExtractor={(item) => item.id.toString()}
+    contentContainerStyle={styles.listContainer}
+  />
+)}
+{isLoading ? (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#FFA500" />
+    <Text style={styles.loadingText}>Loading shipments...</Text>
+  </View>
+) : shipments.length === 0 ? (
+  <View style={styles.emptyContainer}>
+    <Ionicons name="cube-outline" size={50} color="#CCC" />
+    <Text style={styles.emptyText}>No shipment details available</Text>
+  </View>
+) : (
+  <FlatList
+    data={shipments}
+    renderItem={renderShipmentItem}
+    keyExtractor={(item) => item.id.toString()}
+    contentContainerStyle={styles.listContainer}
+  />
+)}
+
       <AddShipment refreshShipments={fetchShipments} />
       {isUpdateModalVisible && (
         <UpdateShipment shipment={currentShipment} onClose={closeUpdateModal} />
@@ -207,12 +227,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#FFF",
   },
   loadingText: {
     fontSize: 18,
     marginTop: 10,
     color: "#666",
+    fontWeight: "bold",
   },
+  
   emptyContainer: {
     flex: 1,
     justifyContent: "center",

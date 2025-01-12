@@ -36,7 +36,7 @@ const AddReviewScreen = ({ navigation, route }) => {
       }
 
       const response = await fetch(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/SaleOrder/get-sale-order-detail?orderId=${orderId}`,
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/get-sale-order-detail?orderId=${orderId}`,
         {
           method: "GET",
           headers: {
@@ -75,6 +75,14 @@ const AddReviewScreen = ({ navigation, route }) => {
       return;
     }
 
+    if (!selectedProductCode || star === 0 || reviewContent.trim() === "") {
+      Alert.alert(
+        "Error",
+        "Vui lòng chọn sản phẩm, đánh giá và nhập nhận xét."
+      );
+      return;
+    }
+
     // Lọc ra các sản phẩm đã được đánh giá
     const reviewsToSubmit = products.filter(
       (product) =>
@@ -91,7 +99,7 @@ const AddReviewScreen = ({ navigation, route }) => {
     try {
       // Gửi đánh giá
       const response = await fetch(
-        `https://capstone-project-703387227873.asia-southeast1.run.app/api/Review/add-review/${orderId}`,
+        `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/Review/add-review/${orderId}`,
         {
           method: "POST",
           headers: {
@@ -99,7 +107,9 @@ const AddReviewScreen = ({ navigation, route }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            productId: reviewsToSubmit[0].productId,
+            productId: products.find(
+              (p) => p.productCode === selectedProductCode
+            )?.productId,
             star,
             reviewContent,
           }),
@@ -107,29 +117,24 @@ const AddReviewScreen = ({ navigation, route }) => {
       );
 
       if (response.ok) {
-        Alert.alert("Success", "2Sport cảm ơn bạn đã chia sẻ cảm nhận!", [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.goBack();
-            },
-          },
-        ]);
+        Alert.alert("Thành công", "2Sport cảm ơn bạn đã chia sẻ cảm nhận!");
+
         setProducts((prevProducts) =>
           prevProducts.filter(
             (product) => product.productCode !== selectedProductCode
           )
         );
+
+        setSelectedProductCode(null);
         setStar(0);
         setReviewContent("");
-        setSelectedProductCode(null);
       } else {
         const errorData = await response.json();
-        Alert.alert("Error", errorData.message || "Failed to submit review.");
+        Alert.alert("Lỗi", errorData.message || "Không thể gửi đánh giá.");
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Something went wrong. Please try again later.");
+      Alert.alert("Lỗi", "Có lỗi xảy ra, vui lòng thử lại sau.");
     }
   };
 
@@ -161,7 +166,13 @@ const AddReviewScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Đánh giá sản phẩm</Text>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Đánh giá sản phẩm</Text>
+        <View style={styles.backButton} />
+      </View>
       <Text style={styles.label}>Chọn sản phẩm để đánh giá:</Text>
       <FlatList
         data={products}
@@ -206,17 +217,37 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f5f5f5",
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#1890ff',
+    fontWeight: 'bold',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#333",
-  },
+
   label: {
     fontSize: 16,
     fontWeight: "bold",
