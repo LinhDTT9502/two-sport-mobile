@@ -76,12 +76,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productImage: {
-    width: "100%",
+    width: 300,
     height: 300,
     resizeMode: "contain",
   },
   productInfo: {
-    padding: 0,
+    marginTop: 16,
     backgroundColor: "#FFFFFF",
   },
   productName: {

@@ -50,6 +50,8 @@ const MyOrder = ({ route }) => {
     { label: "Đã hủy", value: "Đã hủy" },
   ];
 
+  
+
   const onRefresh = async () => {
     try {
       setRefreshing(true);
@@ -71,6 +73,7 @@ const MyOrder = ({ route }) => {
           (item) => item?.parentOrderCode === product.rentalOrderCode
         ),
       },
+      fetchOrders,
     });
   };
 
@@ -78,47 +81,36 @@ const MyOrder = ({ route }) => {
 
   const fetchOrders = async () => {
     try {
-      setIsLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        const ordersData = type === "rent" ? guestRentals : guestOrders;
-        setOrders(
-          type === "rent"
-            ? ordersData?.data?.data?.["$values"]?.sort((a, b) => {
-              return new Date(b.createdAt) - new Date(a.createdAt);
-            }) || []
-            : ordersData
-        );
-        console.log(ordersData);
-      } else {
-        let userId = user?.UserId;
-        if (!userId) {
-          userId = await AsyncStorage.getItem("userId");
+        setIsLoading(true);
+        const token = await AsyncStorage.getItem("token");
+        let ordersData;
+
+        if (!token) {
+            ordersData = type === "rent" ? guestRentals : guestOrders;
+        } else {
+            const userId = user?.UserId || await AsyncStorage.getItem("userId");
+            if (!userId) throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
+
+            ordersData = type === "rent"
+                ? await getListRent(userId, token)
+                : await fetchUserOrders(userId, token);
         }
 
-        if (!userId) {
-          throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
-        }
+        console.log("API Response: ", ordersData);
 
-        const ordersData =
-          type === "rent"
-            ? await getListRent(userId, token)
-            : await fetchUserOrders(userId, token);
         setOrders(
-          type === "rent"
-            ? ordersData?.data?.data?.["$values"]?.sort((a, b) => {
-              return new Date(b.createdAt) - new Date(a.createdAt);
-            }) || []
-            : ordersData
+            type === "rent"
+                ? ordersData?.data?.data?.["$values"]?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) || []
+                : ordersData
         );
-      }
     } catch (err) {
-      console.error("Error loading orders:", err);
-      setError(err.message || "Không thể tải đơn hàng");
+        console.error("Error fetching orders:", err);
+        setError(err.message || "Không thể tải đơn hàng");
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
+
 
   useEffect(() => {
     fetchOrders();

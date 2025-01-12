@@ -11,6 +11,8 @@ import {
   SafeAreaView,
   Dimensions,
 } from "react-native";
+
+
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import {
   useNavigation,
@@ -24,7 +26,7 @@ import RentButton from "../../components/RentButton";
 import BuyNowButton from "../../components/BuyNowButton";
 import Comment from "../../components/ProductDetail/Comment";
 import LikeButton from "../../components/ProductDetail/LikeButton";
-import { checkQuantityProduct } from '../../services/warehouseService';
+import { checkQuantityProduct } from "../../services/warehouseService";
 
 import {
   fetchProductById,
@@ -37,6 +39,7 @@ import { fetchLikes, handleToggleLike } from "../../services/likeService";
 import styles from "./css/ProductDetailStyles";
 import { getUserCart } from "../../services/cartService";
 import { WebView } from "react-native-webview";
+import { ActivityIndicator } from "react-native";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -53,7 +56,7 @@ export default function ProductDetail() {
   const [expanded, setExpanded] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
-  const { productId , productCode } = route.params;
+  const { productId, productCode } = route.params;
   const [token, setToken] = useState(null);
   const [product, setProduct] = useState({});
   // console.log("ProductDetail ~ product:", product)
@@ -85,6 +88,9 @@ export default function ProductDetail() {
   const [bookmarks, setBookmarks] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -325,6 +331,8 @@ export default function ProductDetail() {
   }, []);
 
   useEffect(() => {
+    setLoading(true);
+    setImageLoading(true);
     loadProductDetails();
     loadLikes();
     checkLoginStatus();
@@ -405,6 +413,7 @@ export default function ProductDetail() {
     }
   };
   const loadProductDetails = async () => {
+    setLoading(true);
     try {
       const productData = await fetchProductById(productId);
       // console.log("Fetched Product Data by ID:", productData);
@@ -434,6 +443,8 @@ export default function ProductDetail() {
     } catch (error) {
       Alert.alert("Lỗi", "Không thể tải thông tin sản phẩm.");
       console.error("Error loading product details:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -496,7 +507,6 @@ export default function ProductDetail() {
     }
   };
 
-
   const handleSubmitReview = () => {
     if (userRating === 0) {
       Alert.alert("Lỗi", "Vui lòng chọn số sao đánh giá.");
@@ -515,6 +525,10 @@ export default function ProductDetail() {
     <View style={styles.section}>
       {item.type === "image" && (
         <>
+          {imageLoading && (
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          )}
+
           <Image
             source={{
               uri:
@@ -523,6 +537,7 @@ export default function ProductDetail() {
                 "https://via.placeholder.com/300",
             }}
             style={styles.productImage}
+            onLoad={() => setImageLoading(false)}
           />
 
           <FlatList
@@ -549,11 +564,17 @@ export default function ProductDetail() {
 
       {item.type === "info" && (
         <View style={styles.productInfo}>
-          <View style={styles.rowContainer}>
-            <Text style={styles.productName}>
-              {product.productName || "Tên sản phẩm không có"}
-            </Text>
-            {/* <BookmarkComponent
+          {loading ? (
+            <>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </>
+          ) : (
+            <>
+              <View style={styles.rowContainer}>
+                <Text style={styles.productName}>
+                  {product.productName || "Tên sản phẩm không có"}
+                </Text>
+                {/* <BookmarkComponent
               item={{
                 id: product.id,
                 title: product.title,
@@ -565,158 +586,172 @@ export default function ProductDetail() {
               iconSize={24}
               color="#FF9900"
             /> */}
-          </View>
-          <View style={styles.priceContainer}>
-            <View>
-              <Text style={styles.productPrice}>
-                Giá mua:
-                {product.price
-                  ? ` ${formatCurrency(product.price)}₫`
-                  : "Giá không có"}
-              </Text>
-              {product.discount && product.listedPrice ? (
-                <>
-                  <Text style={styles.originalPrice}>
-                    {formatCurrency(product.listedPrice)}₫
-                  </Text>
-                  <Text style={styles.discount}>Giảm {product.discount}%</Text>
-                </>
-              ) : null}
-            </View>
-
-            <LikeButton
-              productId={productId}
-              productCode={product.productCode}
-              initialLikes={likes}
-              isLikedInitially={isLiked}
-            />
-
-          </View>
-
-          <View style={styles.priceContainer}>
-            {product?.rentPrice ? (
-              <View>
-                <Text style={styles.productRent}>
-                  Giá thuê: {formatCurrency(product.rentPrice)} ₫
-                </Text>
               </View>
-            ) : null}
-          </View>
+              <View style={styles.priceContainer}>
+                <View>
+                  <Text style={styles.productPrice}>
+                    Giá mua:
+                    {product.price
+                      ? ` ${formatCurrency(product.price)}₫`
+                      : "Giá không có"}
+                  </Text>
+                  {product.discount && product.listedPrice ? (
+                    <>
+                      <Text style={styles.originalPrice}>
+                        {formatCurrency(product.listedPrice)}₫
+                      </Text>
+                      <Text style={styles.discount}>
+                        Giảm {product.discount}%
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+
+                <LikeButton
+                  productId={productId}
+                  productCode={product.productCode}
+                  initialLikes={likes}
+                  isLikedInitially={isLiked}
+                />
+              </View>
+
+              <View style={styles.priceContainer}>
+                {product?.rentPrice ? (
+                  <View>
+                    <Text style={styles.productRent}>
+                      Giá thuê: {formatCurrency(product.rentPrice)} ₫
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </>
+          )}
         </View>
       )}
       {item.type === "selection" && (
         <View>
-          {/* Color Selection */}
-          <Text style={styles.sectionTitle}>Màu sắc</Text>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={colors}
-            keyExtractor={(color) => color.color}
-            renderItem={({ item: color }) => (
-              <TouchableOpacity
-                onPress={() => color.status && handleColorSelect(color.color)}
-                style={[
-                  styles.colorOptionContainer,
-                  selectedColor === color.color &&
-                  styles.activeColorOptionContainer,
-                  !color.status && styles.unavailableOption,
-                ]}
-                disabled={!color.status}
-              >
-                <Image
-                  source={{
-                    uri:
-                      imagesByColor[color.color] ||
-                      "https://via.placeholder.com/60",
-                  }}
-                  style={styles.colorOptionImage}
-                />
-                <Text
-                  style={[
-                    styles.colorOptionText,
-                    selectedColor === color.color &&
-                    styles.activeColorOptionText,
-                    !color.status && styles.unavailableText,
-                  ]}
-                >
-                  {color.color} {!color.status && "(Hết hàng)"}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-
-          {/* Size Selection (visible after color selection) */}
-          {selectedColor && (
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          ) : (
             <>
-              <Text style={styles.sectionTitle}>Kích thước</Text>
+              {/* Color Selection */}
+              <Text style={styles.sectionTitle}>Màu sắc</Text>
               <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                data={sizes}
-                keyExtractor={(size) => size.size}
-                renderItem={({ item: size }) => (
-                  <TouchableOpacity
-                    onPress={() => size.status && handleSizeSelect(size.size)}
-                    style={[
-                      styles.sizeButton,
-                      selectedSize === size.size && styles.activeSizeButton,
-                      !size.status && styles.unavailableOption,
-                    ]}
-                    disabled={!size.status}
-                  >
-                    <Text
-                      style={[
-                        styles.sizeButtonText,
-                        selectedSize === size.size &&
-                        styles.activeSizeButtonText,
-                        !size.status && styles.unavailableText,
-                      ]}
-                    >
-                      {size.size} {!size.status && "(Hết hàng)"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-            </>
-          )}
-
-          {/* Condition Selection (visible after size selection) */}
-          {selectedColor && selectedSize && (
-            <>
-              <Text style={styles.sectionTitle}>Tình trạng</Text>
-              <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                data={conditions}
-                keyExtractor={(condition) => condition.condition}
-                renderItem={({ item: condition }) => (
+                data={colors}
+                keyExtractor={(color) => color.color}
+                renderItem={({ item: color }) => (
                   <TouchableOpacity
                     onPress={() =>
-                      condition.status &&
-                      handleConditionSelect(condition.condition)
+                      color.status && handleColorSelect(color.color)
                     }
                     style={[
-                      styles.conditionButton,
-                      selectedCondition === condition.condition &&
-                      styles.activeConditionButton,
-                      !condition.status && styles.unavailableOption,
+                      styles.colorOptionContainer,
+                      selectedColor === color.color &&
+                        styles.activeColorOptionContainer,
+                      !color.status && styles.unavailableOption,
                     ]}
-                    disabled={!condition.status}
+                    disabled={!color.status}
                   >
+                    <Image
+                      source={{
+                        uri:
+                          imagesByColor[color.color] ||
+                          "https://via.placeholder.com/60",
+                      }}
+                      style={styles.colorOptionImage}
+                    />
                     <Text
                       style={[
-                        styles.conditionButtonText,
-                        selectedCondition === condition.condition &&
-                        styles.activeConditionButtonText,
-                        !condition.status && styles.unavailableText,
+                        styles.colorOptionText,
+                        selectedColor === color.color &&
+                          styles.activeColorOptionText,
+                        !color.status && styles.unavailableText,
                       ]}
                     >
-                      {condition.condition}% {!condition.status && "(Hết hàng)"}
+                      {color.color} {!color.status && "(Hết hàng)"}
                     </Text>
                   </TouchableOpacity>
                 )}
               />
+
+              {/* Size Selection (visible after color selection) */}
+              {selectedColor && (
+                <>
+                  <Text style={styles.sectionTitle}>Kích thước</Text>
+                  <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={sizes}
+                    keyExtractor={(size) => size.size}
+                    renderItem={({ item: size }) => (
+                      <TouchableOpacity
+                        onPress={() =>
+                          size.status && handleSizeSelect(size.size)
+                        }
+                        style={[
+                          styles.sizeButton,
+                          selectedSize === size.size && styles.activeSizeButton,
+                          !size.status && styles.unavailableOption,
+                        ]}
+                        disabled={!size.status}
+                      >
+                        <Text
+                          style={[
+                            styles.sizeButtonText,
+                            selectedSize === size.size &&
+                              styles.activeSizeButtonText,
+                            !size.status && styles.unavailableText,
+                          ]}
+                        >
+                          {size.size} {!size.status && "(Hết hàng)"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* Condition Selection (visible after size selection) */}
+              {selectedColor && selectedSize && (
+                <>
+                  <Text style={styles.sectionTitle}>Tình trạng</Text>
+                  <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={conditions}
+                    keyExtractor={(condition) => condition.condition}
+                    renderItem={({ item: condition }) => (
+                      <TouchableOpacity
+                        onPress={() =>
+                          condition.status &&
+                          handleConditionSelect(condition.condition)
+                        }
+                        style={[
+                          styles.conditionButton,
+                          selectedCondition === condition.condition &&
+                            styles.activeConditionButton,
+                          !condition.status && styles.unavailableOption,
+                        ]}
+                        disabled={!condition.status}
+                      >
+                        <Text
+                          style={[
+                            styles.conditionButtonText,
+                            selectedCondition === condition.condition &&
+                              styles.activeConditionButtonText,
+                            !condition.status && styles.unavailableText,
+                          ]}
+                        >
+                          {condition.condition}%{" "}
+                          {!condition.status && "(Hết hàng)"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </>
+              )}
             </>
           )}
         </View>
@@ -943,7 +978,8 @@ export default function ProductDetail() {
           <BuyNowButton
             onPress={() => handleAddToCart("buy")}
             disabled={
-              totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
+              totalPrice === "Hết hàng" ||
+              totalPrice === "Hết Hàng/ Chưa có hàng" ||
               !selectedColor ||
               !selectedSize ||
               !selectedCondition
@@ -955,7 +991,8 @@ export default function ProductDetail() {
             <RentButton
               onPress={() => handleAddToCart("rent")}
               disabled={
-                totalPrice === "Hết hàng" || totalPrice === "Hết Hàng/ Chưa có hàng" ||
+                totalPrice === "Hết hàng" ||
+                totalPrice === "Hết Hàng/ Chưa có hàng" ||
                 !selectedColor ||
                 !selectedSize ||
                 !selectedCondition

@@ -31,6 +31,7 @@ import { useFocusEffect } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { selectUser } from "../../redux/slices/authSlice";
+import { ActivityIndicator } from "react-native-web";
 const COLORS = {
   primary: "#3366FF",
   secondary: "#FF8800",
@@ -63,6 +64,7 @@ export default function PlaceOrderScreen({ route }) {
   const [note, setNote] = useState("");
   const [isGuest, setIsGuest] = useState(false);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isLoadingShipment, setIsLoadingShipment] = useState(false);
 
   const [userData, setUserData] = useState({
     fullName: "",
@@ -95,13 +97,15 @@ export default function PlaceOrderScreen({ route }) {
     };
 
     const fetchShipments = async (token) => {
-      try {
+      try {setIsLoadingShipment(true);
         const shipmentData = await getUserShipmentDetails(token);
         setShipments(shipmentData.$values || []);
         setIsModalVisible(true);
       } catch (error) {
         console.error("Error fetching shipment data:", error);
         Alert.alert("Error", "Unable to fetch delivery data.");
+      }finally {
+        setIsLoadingShipment(false); // Kết thúc loading
       }
     };
 
@@ -597,6 +601,14 @@ export default function PlaceOrderScreen({ route }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Chọn địa chỉ giao hàng</Text>
+
+            {isLoadingShipment ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Đang tải...</Text>
+        </View>
+      ) : (
+
             <FlatList
               data={shipments}
               keyExtractor={(item) => item.id?.toString() || ""}
@@ -617,7 +629,7 @@ export default function PlaceOrderScreen({ route }) {
               ListEmptyComponent={
                 <Text style={styles.emptyText}>Chưa có địa chỉ nào</Text>
               }
-            />
+            />)}
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setIsModalVisible(false)}
@@ -716,6 +728,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: COLORS.gray,
+  },
+  
   totalText: {
     fontSize: 18,
     fontWeight: "bold",

@@ -46,7 +46,7 @@ const paymentStatusColors = {
 };
 
 function SelectPayment({ route }) {
-  const { order } = route.params;
+  const { order, fetchOrders } = route.params;
   const navigation = useNavigation();
   const [selectedOption, setSelectedOption] = useState("1");
   const [paymentCompleted, setPaymentCompleted] = useState(false);
@@ -64,7 +64,39 @@ function SelectPayment({ route }) {
   const [orderData, setOrderData] = useState(order);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => { }, [isUpdating, status, showExtendedModal]);
+  useEffect(() => {}, [isUpdating, orderData.status, showExtendedModal]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const updatedOrders = await fetchOrders();
+  
+      // Kiểm tra nếu `updatedOrders` là mảng hợp lệ
+      if (Array.isArray(updatedOrders)) {
+        const updatedOrder = updatedOrders.find(
+          (item) =>
+            item.rentalOrderCode === order.rentalOrderCode ||
+            item.saleOrderCode === order.saleOrderCode
+        );
+  
+        if (updatedOrder) {
+          setOrderData({
+            ...updatedOrder,
+            children: updatedOrders.filter(
+              (item) => item?.parentOrderCode === updatedOrder?.rentalOrderCode
+            ),
+          });
+        }
+      } else {
+        console.warn("fetchOrders did not return a valid array:", updatedOrders);
+      }
+    } catch (error) {
+      console.error("Failed to refresh orders:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  
 
   const handleCheck = async () => {
     if (paymentCompleted) {
@@ -77,17 +109,17 @@ function SelectPayment({ route }) {
 
         const data = order.rentalOrderCode
           ? await selectRentalCheckout({
-            paymentMethodID: selectedOption,
-            orderId: order.id,
-            orderCode: order.rentalOrderCode || order.saleOrderCode,
-            ..._d,
-          })
+              paymentMethodID: selectedOption,
+              orderId: order.id,
+              orderCode: order.rentalOrderCode || order.saleOrderCode,
+              ..._d,
+            })
           : await selectCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.saleOrderCode,
-            ..._d,
-          });
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.saleOrderCode,
+              ..._d,
+            });
         setPaymentCompleted(true);
         navigation.navigate("AfterPayment");
       } else if (selectedOption === "2" || selectedOption === "3") {
@@ -95,17 +127,17 @@ function SelectPayment({ route }) {
         const data =
           order.rentalOrderCode || order.rentalOrderCode === order.saleOrderCode
             ? await selectRentalCheckout({
-              paymentMethodID: parseInt(selectedOption),
-              orderID: order.id,
-              orderCode: order.rentalOrderCode,
-              ..._d,
-            })
+                paymentMethodID: parseInt(selectedOption),
+                orderID: order.id,
+                orderCode: order.rentalOrderCode,
+                ..._d,
+              })
             : await selectCheckout({
-              paymentMethodID: parseInt(selectedOption),
-              orderId: order.id,
-              orderCode: order.saleOrderCode,
-              ..._d,
-            });
+                paymentMethodID: parseInt(selectedOption),
+                orderId: order.id,
+                orderCode: order.saleOrderCode,
+                ..._d,
+              });
 
         if (data?.data?.data?.paymentLink) {
           setLinkPayment(data.data.data.paymentLink);
@@ -128,17 +160,17 @@ function SelectPayment({ route }) {
         // Bank Transfer
         const data = order.rentalOrderCode
           ? await selectRentalCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.rentalOrderCode || order.saleOrderCode,
-            ..._d,
-          })
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.rentalOrderCode || order.saleOrderCode,
+              ..._d,
+            })
           : await selectCheckout({
-            paymentMethodID: parseInt(selectedOption),
-            orderId: order.id,
-            orderCode: order.saleOrderCode,
-            ..._d,
-          });
+              paymentMethodID: parseInt(selectedOption),
+              orderId: order.id,
+              orderCode: order.saleOrderCode,
+              ..._d,
+            });
         setPaymentCompleted(true);
         Alert.alert(
           "Thanh toán thành công",
@@ -170,7 +202,8 @@ function SelectPayment({ route }) {
       if (order.saleOrderCode) {
         console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
         const response = await axios.post(
-          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/request-cancel/${order.id
+          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
+            order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
           {
@@ -182,7 +215,8 @@ function SelectPayment({ route }) {
         setIsUpdating(true);
       } else if (order.rentalOrderCode) {
         const response = await axios.post(
-          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/request-cancel/${order.id
+          `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/request-cancel/${
+            order.id
           }?reason=${encodeURIComponent(reason)}`,
           null, // No request body
           {
@@ -224,15 +258,20 @@ function SelectPayment({ route }) {
 
   useEffect(() => {
     const fetchReviewStatus = async () => {
-      const isReviewed = await checkIsReviewed(order.id);
-      setOrderData((prevData) => ({
-        ...prevData,
-        isReviewed,
-      }));
+      try {
+        const isReviewed = await checkIsReviewed(order.id);
+        setOrderData((prevData) => ({
+          ...prevData,
+          isReviewed,
+        }));
+      } catch (error) {
+        console.error("Error fetching review status:", error);
+      }
     };
-
+  
     fetchReviewStatus();
-  }, [order.id]);
+  }, [order.id, orderData.orderStatus]);
+  
 
   const handleUpdateOrderStatus = async () => {
     Alert.alert("Xác nhận", "Bạn đã nhận được hàng?", [
@@ -257,10 +296,7 @@ function SelectPayment({ route }) {
                   },
                 }
               );
-              if (response.status === 200) {
-                // navigation.navigate("AddReview", { orderId: order.id });
-                return;
-              }
+              
             } else if (order.rentalOrderCode) {
               console.log(`update sale order ${order.id}`);
               const response = await axios.put(
@@ -275,12 +311,15 @@ function SelectPayment({ route }) {
             }
 
             // Alert.alert("2Sport cảm ơn quý khách");
+            setIsUpdating(true);
+            setOrderData((prevData) => ({
+              ...prevData,
+              orderStatus: "Đã giao hàng",
+            }));
 
             setStatus("Đã giao hàng");
             Alert.alert("Thành công", "Bạn đã xác nhận đã nhận hàng.");
-            setTimeout(() => {
-              navigation.replace("SelectPayment", { order });
-            });
+
           } catch (error) {
             console.error("Error cancel order:", error);
             Alert.alert("Lỗi", "Không thể xác nhận.");
@@ -331,7 +370,7 @@ function SelectPayment({ route }) {
         Math.ceil(
           (new Date(selectedDate) -
             new Date(selectedChildOrder.rentalEndDate)) /
-          (1000 * 60 * 60 * 24)
+            (1000 * 60 * 60 * 24)
         ) + 1;
 
       const payload = {
@@ -364,10 +403,37 @@ function SelectPayment({ route }) {
     }
   };
 
-  const totalAmount = order.saleOrderDetailVMs.$values.reduce(
-    (sum, item) => sum + item.totalAmount,
-    0
-  );
+  // const totalAmount = order.saleOrderDetailVMs.$values.reduce(
+  //   (sum, item) => sum + item.totalAmount,
+  //   0
+  // );
+
+  // Tính tổng tiền cho đơn mua và đơn thuê
+  const calculateTotalAmount = (order) => {
+    if (order.rentalOrderCode) {
+      // Đơn thuê
+      return (
+        (order?.children || []).reduce(
+          (sum, child) => sum + (child?.unitPrice || 0) * (child?.quantity || 0),
+          0
+        ) || order.subTotal || 0
+      );
+    } else if (order.saleOrderCode) {
+      // Đơn mua
+      return (
+        (order?.saleOrderDetailVMs?.["$values"] || []).reduce(
+          (sum, item) => sum + (item?.totalAmount || 0),
+          0
+        ) || 0
+      );
+    }
+    return 0;
+  };
+  
+  // Tính tổng tiền
+  const totalAmount = calculateTotalAmount(order);
+  
+
 
   // Determine the transport fee value dynamically
   let transportFeeValue = null;
@@ -398,10 +464,38 @@ function SelectPayment({ route }) {
         <Text style={styles.headerTitle}>Chi tiết đơn hàng </Text>
       </View>
       <View style={styles.buttonReq}>
-        {orderData.orderStatus === "Đã hoàn thành" && !orderData.isReviewed && (
+      {orderData.orderStatus === "Đã hoàn thành" && (
           <TouchableOpacity
-            style={{
-              backgroundColor: orderData.isReviewed ? "#CCCCCC" : "#3366FF",
+          style={{
+            backgroundColor: orderData.isReviewed ? "rgb(179, 198, 253)" : "#3366FF",
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 8,
+            marginHorizontal: 16,
+            marginTop: 8,
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+          }}
+          onPress={() =>
+            !orderData.isReviewed &&
+            navigation.navigate("AddReview", { orderId: orderData.id })
+          }
+            disabled={orderData.isReviewed}
+          >
+            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
+      {orderData.isReviewed ? "Đã đánh giá" : "Đánh giá"}
+    </Text>
+          </TouchableOpacity>
+        )}
+
+        {order.orderStatus === "Đã giao cho ĐVVC" && (
+          <TouchableOpacity
+          style={[
+            {
+              backgroundColor: "#4CAF50",
               paddingVertical: 12,
               paddingHorizontal: 20,
               borderRadius: 8,
@@ -412,38 +506,11 @@ function SelectPayment({ route }) {
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.1,
               shadowRadius: 4,
-            }}
-            onPress={() =>
-              !orderData.isReviewed &&
-              navigation.navigate("AddReview", { orderId: orderData.id })
-            }
-            disabled={orderData.isReviewed}
-          >
-            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
-              {orderData.isReviewed ? "Đã đánh giá" : "Đánh giá"}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {order.orderStatus === "Đã giao cho ĐVVC" && (
-          <TouchableOpacity
-            style={[
-              {
-                backgroundColor: "#4CAF50",
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                borderRadius: 8,
-                marginHorizontal: 16,
-                marginTop: 8,
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-              },
-              paymentCompleted && styles.disabledButton,
-            ]}
+            },
+            isUpdating && styles.disabledButton,
+          ]}
             onPress={handleUpdateOrderStatus}
+            disabled={isUpdating}
           >
             <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
               Đã nhận hàng
@@ -451,27 +518,28 @@ function SelectPayment({ route }) {
           </TouchableOpacity>
         )}
 
-        {order.orderStatus === "Chờ xử lý" && (
+        {order.orderStatus === "Chờ xử lý"  && status !== "Đã hủy" &&(
           <TouchableOpacity
-            style={{
-              backgroundColor: isUpdating ? "#CCC" : "#FF4444",
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-              borderRadius: 8,
-              marginHorizontal: 16,
-              marginTop: 8,
-              elevation: 2,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-            }}
+          style={{
+            backgroundColor:
+              isUpdating || order.orderStatus === "Đã hủy" ? "#CCC" : "#FF4444",
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 8,
+            marginHorizontal: 16,
+            marginTop: 8,
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+          }}
             onPress={() => !isUpdating && setShowModal(true)}
-            disabled={isUpdating}
+            disabled={isUpdating || order.orderStatus === "Đã hủy"}
           >
             <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "600" }}>
-              Hủy đơn
-            </Text>
+      {order.orderStatus === "Đã hủy" ? "Đã hủy" : "Hủy đơn"}
+    </Text>
           </TouchableOpacity>
         )}
         <Modal
@@ -563,14 +631,7 @@ function SelectPayment({ route }) {
       <ScrollView
         style={styles.content}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              setOrderData({ ...orderData });
-              setRefreshing(false);
-            }}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {/* Customer Information */}
@@ -666,7 +727,8 @@ function SelectPayment({ route }) {
                           Tình trạng: {_item.condition}%
                         </Text>
                         <Text style={styles.itemName2}>
-                          Đơn giá: {formatCurrency(_item.unitPrice || _item.subTotal)}
+                          Đơn giá:{" "}
+                          {formatCurrency(_item.unitPrice || _item.subTotal)}
                         </Text>
                       </View>
                       <Text style={styles.itemQuantity}>
@@ -737,28 +799,23 @@ function SelectPayment({ route }) {
             })}
             <TotalItem
               label="Tổng cộng"
-              value={totalAmount.toLocaleString("vi-VN") + "₫"}
+              value={`${totalAmount.toLocaleString("vi-VN")} ₫`}
             />
-            {
-              order.deliveryMethod === "Giao hàng tận nơi" && (
-                <TotalItem
-                  label="Phí vận chuyển"
-                  value={
-                    typeof transportFeeValue === "number"
-                      ? transportFeeValue.toLocaleString("vi-VN") + "₫"
-                      : transportFeeValue // If it's a string, use it directly
-                  }
-                />
-              )
-            }
+            {order.deliveryMethod === "Giao hàng tận nơi" && (
+              <TotalItem
+                label="Phí vận chuyển"
+                value={
+                  typeof transportFeeValue === "number"
+                    ? `${transportFeeValue.toLocaleString("vi-VN")} ₫`
+                    : transportFeeValue
+                }
+              />
+            )}
 
             <TotalItem
               label="Thành tiền"
-              value={
-                (totalAmount + order.tranSportFee).toLocaleString(
-                  "vi-VN"
-                ) + "₫"
-              }
+              value={`${(totalAmount + order.tranSportFee).toLocaleString("vi-VN")} ₫`}
+
               isTotal
             />
           </View>
@@ -874,7 +931,7 @@ function SelectPayment({ route }) {
         {order?.rentalOrderCode ? (
           <>
             {(order.orderStatus !== "Đã hủy" || status === "Đã hủy") &&
-              order?.depositStatus === "N/A" ? (
+            order?.depositStatus === "N/A" ? (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đặt cọc</Text>
                 {[
@@ -895,7 +952,7 @@ function SelectPayment({ route }) {
                           style={[
                             styles.optionText,
                             selectedOption === item.value &&
-                            styles.selectedOptionText,
+                              styles.selectedOptionText,
                             paymentCompleted && styles.disabledOptionText,
                           ]}
                         >
@@ -903,12 +960,12 @@ function SelectPayment({ route }) {
                         </Text>
                       </View>
                       {!order?.depositStatus ||
-                        order?.depositStatus === "N/A" ? (
+                      order?.depositStatus === "N/A" ? (
                         <View
                           style={[
                             styles.radioButton,
                             deposit === item.value &&
-                            styles.selectedRadioButton,
+                              styles.selectedRadioButton,
                           ]}
                         >
                           {deposit === item.value && (
@@ -1373,7 +1430,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-    width: "80%"
+    width: "80%",
   },
   infoLabel: {
     fontSize: 14,

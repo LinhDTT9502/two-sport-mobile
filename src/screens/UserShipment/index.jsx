@@ -153,7 +153,7 @@ export default function UserShipment({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Addresses</Text>
+        <Text style={styles.headerTitle}>Địa chỉ của tôi</Text>
       </View>
       {isLoading ? (
   <View style={styles.loadingContainer}>
@@ -163,7 +163,7 @@ export default function UserShipment({ navigation }) {
 ) : shipments.length === 0 ? (
   <View style={styles.emptyContainer}>
     <Ionicons name="cube-outline" size={50} color="#CCC" />
-    <Text style={styles.emptyText}>No shipment details available</Text>
+    <Text style={styles.emptyText}>Chưa có địa chỉ nào</Text>
   </View>
 ) : (
   <FlatList
@@ -173,24 +173,7 @@ export default function UserShipment({ navigation }) {
     contentContainerStyle={styles.listContainer}
   />
 )}
-{isLoading ? (
-  <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color="#FFA500" />
-    <Text style={styles.loadingText}>Loading shipments...</Text>
-  </View>
-) : shipments.length === 0 ? (
-  <View style={styles.emptyContainer}>
-    <Ionicons name="cube-outline" size={50} color="#CCC" />
-    <Text style={styles.emptyText}>No shipment details available</Text>
-  </View>
-) : (
-  <FlatList
-    data={shipments}
-    renderItem={renderShipmentItem}
-    keyExtractor={(item) => item.id.toString()}
-    contentContainerStyle={styles.listContainer}
-  />
-)}
+
 
       <AddShipment refreshShipments={fetchShipments} />
       {isUpdateModalVisible && (
