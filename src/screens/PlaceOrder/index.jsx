@@ -12,6 +12,7 @@ import {
   Modal,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
@@ -31,7 +32,6 @@ import { useFocusEffect } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { selectUser } from "../../redux/slices/authSlice";
-import { ActivityIndicator } from "react-native-web";
 const COLORS = {
   primary: "#3366FF",
   secondary: "#FF8800",
@@ -50,7 +50,7 @@ export default function PlaceOrderScreen({ route }) {
   );
   const userLogin = useSelector(selectUser);
   const shipment = useSelector((state) => state.shipment || {});
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(true);
   const [branches, setBranches] = useState([]);
   const [shipments, setShipments] = useState([]);
   const [selectedOption, setSelectedOption] = useState("HOME_DELIVERY");
@@ -64,7 +64,8 @@ export default function PlaceOrderScreen({ route }) {
   const [note, setNote] = useState("");
   const [isGuest, setIsGuest] = useState(false);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [isLoadingShipment, setIsLoadingShipment] = useState(false);
+  const [isLoadingShipmentData, setIsLoadingShipmentData] = useState(true);
+  console.log(isLoadingShipmentData);
 
   const [userData, setUserData] = useState({
     fullName: "",
@@ -86,31 +87,37 @@ export default function PlaceOrderScreen({ route }) {
   // );
 
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        setIsGuest(true);
-      } else {
-        setIsGuest(false);
-        fetchShipments(token);
-      }
-    };
-
-    const fetchShipments = async (token) => {
-      try {setIsLoadingShipment(true);
-        const shipmentData = await getUserShipmentDetails(token);
-        setShipments(shipmentData.$values || []);
-        setIsModalVisible(true);
+    const init = async () => {
+      try {
+        setIsLoadingShipmentData(true);
+        await checkLoginStatus();
+        const token = await AsyncStorage.getItem("token");
+        await fetchShipments(token);
       } catch (error) {
-        console.error("Error fetching shipment data:", error);
-        Alert.alert("Error", "Unable to fetch delivery data.");
-      }finally {
-        setIsLoadingShipment(false); // Kết thúc loading
+        console.error("Initialization error:", error);
       }
     };
-
-    checkLoginStatus();
+    init();
   }, []);
+
+  const checkLoginStatus = async () => {
+    const token = await AsyncStorage.getItem("token");
+    setIsGuest(!token);
+  };
+
+  const fetchShipments = async (token) => {
+    try {
+      const shipmentData = await getUserShipmentDetails(token);
+      if (shipmentData) {
+        setShipments(shipmentData.$values || []);
+      }
+    } catch (error) {
+      console.error("Error fetching shipment data:", error);
+      Alert.alert("Error", "Unable to fetch delivery data.");
+    } finally {
+      setIsLoadingShipmentData(false);
+    }
+  };
 
   const handleSelectShipment = (item) => {
     if (!item || !item.id) {
@@ -217,18 +224,35 @@ export default function PlaceOrderScreen({ route }) {
 
     // Recalculate count for the item with end date
     if (data[index].dateSelected.start && data[index].dateSelected.end) {
-      data[index].dateSelected.count = dayjs(data[index].dateSelected.end).diff(dayjs(data[index].dateSelected.start), "day");
+      data[index].dateSelected.count = dayjs(data[index].dateSelected.end).diff(
+        dayjs(data[index].dateSelected.start),
+        "day"
+      );
     }
 
     setCartItems(data);
     setDatePickerVisibility(false);
   };
 
+  const handleCancel = () => {
+    navigation.goBack();
+  };
+
   const renderCustomerInfo = () => {
+    // if (isLoadingShipmentData) {
+    //   return (
+    //     <View style={styles.loadingContainer}>
+    //       <ActivityIndicator size="large" color={COLORS.primary} />
+    //       <Text style={styles.loadingText}>
+    //         Đang tải thông tin giao hàng...
+    //       </Text>
+    //     </View>
+    //   );
+    // }
     if (isGuest) {
       return (
         <View style={styles.sectionContainer}>
-          <View style={{ flexDirection: "row", gap: 16, marginBottom: 12 }}>
+          <View style={styles.genderContainer}>
             {[
               { title: "Anh", value: "male" },
               { title: "Chị", value: "female" },
@@ -302,7 +326,7 @@ export default function PlaceOrderScreen({ route }) {
     } else {
       return (
         <View style={styles.sectionContainer}>
-          <View style={{ flexDirection: "row", gap: 16, marginBottom: 12 }}>
+          <View style={styles.genderContainer}>
             {[
               { title: "Anh", value: "male" },
               { title: "Chị", value: "female" },
@@ -361,7 +385,12 @@ export default function PlaceOrderScreen({ route }) {
               )}
               <TouchableOpacity
                 style={styles.changeAddressButton}
-                onPress={() => setIsModalVisible(true)}
+                onPress={() => {
+                  if (shipments.length > 0) {
+                    setIsModalVisible(true);
+                  } else {
+                  }
+                }}
               >
                 <Text style={styles.changeAddressText}>
                   {userData.shipmentDetailID
@@ -469,7 +498,8 @@ export default function PlaceOrderScreen({ route }) {
       title: "Phương thức giao hàng",
       data: [{ key: "orderMethod" }],
       renderItem: () => (
-        <View>
+        <View style={styles.sectionContainer}>
+          {" "}
           <OrderMethod
             selectedProducts={selectedCartItems}
             userData={userData}
@@ -551,7 +581,7 @@ export default function PlaceOrderScreen({ route }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
         </TouchableOpacity>
-        <Text style={styles.title}>Thanh toán</Text>
+        <Text style={styles.title}>Thông tin đơn hàng</Text>
       </View>
       {renderDataSelect(isDatePickerVisible)}
       <SectionList
@@ -575,70 +605,84 @@ export default function PlaceOrderScreen({ route }) {
                 {formatCurrency(totalPrice)}
               </Text>
             </View>
-            <CheckoutButton
-              selectedOption={selectedOption}
-              shipment={shipment}
-              selectedBranchId={selectedBranchId}
-              selectedPaymentMethod={selectedPaymentMethod}
-              note={note}
-              selectedCartItems={cartItems}
-              userData={userData}
-              type={type}
-              dateSelected={dateSelected}
-            />
+
+            <View style={styles.footerContainer}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Text style={styles.cancelButtonText}>Hủy</Text>
+              </TouchableOpacity>
+              <CheckoutButton
+                selectedOption={selectedOption}
+                shipment={shipment}
+                selectedBranchId={selectedBranchId}
+                selectedPaymentMethod={selectedPaymentMethod}
+                note={note}
+                selectedCartItems={cartItems}
+                userData={userData}
+                type={type}
+                dateSelected={dateSelected}
+              />
+            </View>
           </>
         )}
         stickySectionHeadersEnabled={false}
         contentContainerStyle={styles.sectionListContent}
       />
 
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Chọn địa chỉ giao hàng</Text>
-
-            {isLoadingShipment ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Đang tải...</Text>
-        </View>
-      ) : (
-
-            <FlatList
-              data={shipments}
-              keyExtractor={(item) => item.id?.toString() || ""}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.addressItem,
-                    shipment?.id === item.id && styles.selectedAddress,
-                  ]}
-                  onPress={() => handleSelectShipment(item)}
-                >
-                  <Text style={styles.addressName}>{item.fullName}</Text>
-                  <Text style={styles.addressText}>{item.address}</Text>
-                  <Text style={styles.addressText}>{item.phoneNumber}</Text>
-                  <Text style={styles.selectedText}>{item.email}</Text>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>Chưa có địa chỉ nào</Text>
-              }
-            />)}
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setIsModalVisible(false)}
+      {!isLoadingShipmentData ? (
+              <Modal
+              visible={isModalVisible}
+              animationType="slide"
+              transparent={true}
+              onRequestClose={() => setIsModalVisible(false)}
             >
-              <Text style={styles.closeButtonText}>Đóng</Text>
-            </TouchableOpacity>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Chọn địa chỉ giao hàng</Text>
+    
+                  <FlatList
+                    data={shipments}
+                    keyExtractor={(item) => item.id?.toString() || ""}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.addressItem,
+                          shipment?.id === item.id && styles.selectedAddress,
+                        ]}
+                        onPress={() => handleSelectShipment(item)}
+                      >
+                        <Text style={styles.addressName}>{item.fullName}</Text>
+                        <Text style={styles.addressText}>{item.address}</Text>
+                        <Text style={styles.addressText}>{item.phoneNumber}</Text>
+                        <Text style={styles.selectedText}>{item.email}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+    
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setIsModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Đóng</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+      ) : (
+<Modal
+          visible={isModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải...</Text>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -646,16 +690,17 @@ export default function PlaceOrderScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 30,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: "#F5F7FA",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    borderBottomColor: "#E0E0E0",
   },
   title: {
     fontSize: 20,
@@ -668,13 +713,18 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     backgroundColor: COLORS.white,
-    marginBottom: 8,
-    borderRadius: 8,
-    overflow: "hidden",
+    borderRadius: 12,
     padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionHeader: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#F5F7FA",
     paddingVertical: 8,
     paddingHorizontal: 16,
     marginBottom: 8,
@@ -682,63 +732,86 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: COLORS.white,
+    color: COLORS.dark,
   },
   sectionSeparator: {
-    height: 8,
+    height: 16,
   },
   productItem: {
     flexDirection: "row",
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   image: {
     width: 80,
     height: 80,
-    marginRight: 16,
     borderRadius: 8,
+    marginRight: 16,
   },
   productDetails: {
     flex: 1,
-    justifyContent: "space-between",
   },
   productName: {
     fontSize: 16,
     fontWeight: "bold",
     color: COLORS.dark,
+    marginBottom: 4,
   },
-  productQuantity: {
+  // productQuantity: {
+  //   color: COLORS.gray,
+  // },
+  productInfo: {
+    fontSize: 14,
     color: COLORS.gray,
+    marginBottom: 2,
   },
   productPrice: {
-    color: COLORS.primary,
+    fontSize: 16,
     fontWeight: "bold",
+    color: COLORS.primary,
+    marginTop: 4,
   },
   productTotal: {
+    fontSize: 16,
     fontWeight: "bold",
     color: COLORS.secondary,
+    marginTop: 8,
   },
   totalContainer: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: COLORS.white,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: COLORS.gray,
   },
-  
+
   totalText: {
     fontSize: 18,
     fontWeight: "bold",
@@ -757,10 +830,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.dark,
     backgroundColor: COLORS.white,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   noteInput: {
-    height: 80,
+    height: 100,
     textAlignVertical: "top",
   },
   modalContainer: {
@@ -770,8 +843,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.white,
+    borderRadius: 12,
     padding: 16,
-    borderRadius: 8,
     margin: 16,
     maxHeight: "80%",
   },
@@ -785,8 +858,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
-    borderRadius: 8,
-    marginBottom: 8,
   },
   selectedAddress: {
     backgroundColor: COLORS.lightGray,
@@ -815,7 +886,7 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     color: COLORS.gray,
-    marginTop: 16,
+    marginVertical: 16,
     fontSize: 16,
   },
   selectedShipment: {
@@ -842,7 +913,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 8,
   },
   changeAddressText: {
     color: COLORS.white,
@@ -925,5 +995,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#2D3748",
+  },
+
+  genderContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginBottom: 16,
+    gap: 10,
+  },
+
+  footerContainer: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: 16,
+    gap: 20,
+    alignSelf: "flex-end",
+  },
+  cancelButton: {
+    width: 100,
+    backgroundColor: "red",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  cancelButtonText: {
+    color: COLORS.white,
+    fontSize: 14, // Giảm kích thước chữ
+    fontWeight: "bold",
   },
 });

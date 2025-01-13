@@ -36,7 +36,6 @@ const Comment = ({ productCode, isLoggedIn, currentUserId }) => {
     if (productCode) {
       loadComments();
     } else {
-      setError("Product ID is missing.");
     }
   }, [productCode]);
   

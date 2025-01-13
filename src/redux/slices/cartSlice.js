@@ -4,7 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const loadState = () => {
   try {
-    const serializedState = localStorage.getItem('cart');
+    const serializedState = AsyncStorage.getItem('cart');
     if (serializedState === null) {
       return undefined;
     }
@@ -17,7 +17,7 @@ const loadState = () => {
 const saveState = (state) => {
   try {
     const serializedState = JSON.stringify(state);
-    localStorage.setItem('cart', serializedState);
+    AsyncStorage.setItem('cart', serializedState);
   } catch {
     // ignore write errors
   }

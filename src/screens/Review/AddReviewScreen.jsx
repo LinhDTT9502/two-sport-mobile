@@ -168,7 +168,7 @@ const AddReviewScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Back</Text>
+          <Text style={styles.backButtonText}>Quay lại</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Đánh giá sản phẩm</Text>
         <View style={styles.backButton} />

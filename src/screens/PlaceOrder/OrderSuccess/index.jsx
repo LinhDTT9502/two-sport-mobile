@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { FontAwesome5 } from "@expo/vector-icons";
 
@@ -7,10 +7,19 @@ const { width } = Dimensions.get('window');
 
 const OrderSuccessScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { id, saleOrderCode, ...order } = route.params || {};
+  const { id, saleOrderCode, rentalOrderCode, children, ...order } = route.params || {};
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
+
+  console.log("Navigating to SelectPayment with order:", {
+    id,
+    saleOrderCode,
+    rentalOrderCode,
+    totalAmount: order?.saleCosts?.totalAmount || order?.rentalCosts?.totalAmount,
+    tranSportFee: order?.tranSportFee || 0,
+    ...order, 
+  });
 
   useEffect(() => {
     Animated.parallel([
@@ -27,52 +36,101 @@ const OrderSuccessScreen = ({ route }) => {
     ]).start();
   }, []);
 
-  return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        <View style={styles.iconContainer}>
-          <FontAwesome5 name="check-circle" size={80} color="#fff" />
+  const renderOrderDetails = () => {
+    if (saleOrderCode) {
+      return (
+        <View style={styles.detailsContainer}>
+          <Text style={styles.detailsText}>
+            <Text style={styles.boldText}>Mã đơn hàng:</Text> {saleOrderCode}
+          </Text>
         </View>
-        <Text style={styles.title}>Đặt hàng thành công!</Text>
-        <Text style={styles.message}>Cảm ơn bạn đã đặt hàng.</Text>
-        {id && saleOrderCode ? (
-          <View style={styles.detailsContainer}>
-            <Text style={styles.detailsText}>
-              <Text style={styles.boldText}>Mã đơn hàng:</Text> {saleOrderCode}
-            </Text>
-            {/* <Text style={styles.detailsText}>
-              <Text style={styles.boldText}>ID đơn hàng:</Text> {saleOrderCode}
-            </Text> */}
-          </View>
-        ) : (
-          <Text style={styles.errorText}>Lỗi: Thiếu thông tin đơn hàng.</Text>
-        )}
+      );
+    } else if (rentalOrderCode) {
+      return (
+        <View style={styles.detailsContainer}>
+          <Text style={styles.detailsText}>
+            <Text style={styles.boldText}>Mã đơn thuê:</Text> {rentalOrderCode}
+          </Text>
+          {children && children.length > 0 && (
+            <View>
+              <Text style={[styles.detailsText, styles.boldText, styles.childrenTitle]}>Đơn con:</Text>
+              {children.map((child, index) => (
+                <View key={index} style={styles.childOrder}>
+                  <Text style={styles.detailsText}>
+                    <Text style={styles.boldText}>Mã đơn con:</Text> {child.rentalOrderCode}
+                  </Text>
+                  <Text style={styles.detailsText}>
+                    <Text style={styles.boldText}>Sản phẩm:</Text> {child.productName}
+                  </Text>
+                  <Text style={styles.detailsText}>
+                    <Text style={styles.boldText}>Số lượng:</Text> {child.quantity}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      );
+    } else {
+      return <Text style={styles.errorText}>Lỗi: Thiếu thông tin đơn hàng.</Text>;
+    }
+  };
 
-        <TouchableOpacity
-          style={[styles.button, styles.paymentButton]}
-          onPress={() => navigation.navigate("SelectPayment", {order: {id, saleOrderCode,...order}})}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>Thanh toán</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, styles.homeButton]}
-          onPress={() => navigation.navigate("HomeController")}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.buttonText, styles.homeButtonText]}>Quay về trang chủ</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+          <View style={styles.iconContainer}>
+            <FontAwesome5 name="check-circle" size={80} color="#fff" />
+          </View>
+          <Text style={styles.title}>Đặt hàng thành công!</Text>
+          <Text style={styles.message}>Cảm ơn bạn đã đặt hàng.</Text>
+          {renderOrderDetails()}
+          <TouchableOpacity
+  style={[styles.button, styles.paymentButton]}
+  onPress={() =>
+    navigation.navigate("SelectPayment", {
+      order: {
+        id,
+        saleOrderCode,
+        rentalOrderCode,
+        totalAmount: order?.saleCosts?.totalAmount || order?.rentalCosts?.totalAmount,
+        tranSportFee: order?.tranSportFee || 0,
+        children: order.childOrders?.["$values"], // Truyền danh sách đơn con nếu có
+        ...order,
+      },
+    })
+  }
+  
+  activeOpacity={0.8}
+>
+  <Text style={styles.buttonText}>Tiếp tục thanh toán</Text>
+</TouchableOpacity>
+
+
+          <TouchableOpacity
+            style={[styles.button, styles.homeButton]}
+            onPress={() => navigation.navigate("HomeController")}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.buttonText, styles.homeButtonText]}>Quay về trang chủ</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: '#f0f8ff',
+    paddingVertical: 32,
   },
   content: {
     backgroundColor: '#fff',
@@ -131,6 +189,18 @@ const styles = StyleSheet.create({
   boldText: {
     fontWeight: "bold",
     color: "#4CAF50",
+  },
+  childrenTitle: {
+    marginTop: 12,
+    marginBottom: 8,
+    fontSize: 18,
+  },
+  childOrder: {
+    marginLeft: 16,
+    marginBottom: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: "#4CAF50",
+    paddingLeft: 12,
   },
   errorText: {
     fontSize: 16,

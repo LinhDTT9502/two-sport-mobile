@@ -50,6 +50,16 @@ const MyOrder = ({ route }) => {
     { label: "Đã hủy", value: "Đã hủy" },
   ];
 
+  // useEffect(() => {
+  //   if (route.params?.navigateToDetail && route.params?.selectedOrder) {
+  //     const { selectedOrder } = route.params;
+  
+  //     navigation.navigate("SelectPayment", {
+  //       order: selectedOrder,
+  //       children: selectedOrder.children || [],
+  //     });
+  //   }
+  // }, [route.params]);
   
 
   const onRefresh = async () => {
@@ -64,18 +74,22 @@ const MyOrder = ({ route }) => {
   };
 
   const openProductModal = (product) => {
-    // setSelectedProduct(product);
-    // setProductModalOpen(true);
+    const childOrders = orders?.filter(
+      (item) => item?.parentOrderCode === product.rentalOrderCode
+    );
+  
+    // console.log("Parent Order:", product);
+    // console.log("Child Orders:", childOrders);
+  
     navigation.navigate("SelectPayment", {
       order: {
         ...product,
-        children: orders?.filter(
-          (item) => item?.parentOrderCode === product.rentalOrderCode
-        ),
+        children: childOrders,
       },
       fetchOrders,
     });
   };
+  
 
   const closeProductModal = () => setProductModalOpen(false);
 
@@ -96,15 +110,21 @@ const MyOrder = ({ route }) => {
                 : await fetchUserOrders(userId, token);
         }
 
-        console.log("API Response: ", ordersData);
+        // console.log("API Response: ", );
 
         setOrders(
-            type === "rent"
-                ? ordersData?.data?.data?.["$values"]?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) || []
-                : ordersData
+          type === "rent"
+            ? ordersData?.data?.data?.["$values"]?.map((order) => ({
+                ...order,
+                children: ordersData?.data?.data?.["$values"]?.filter(
+                  (child) => child?.parentOrderCode === order?.rentalOrderCode
+                ),
+              })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) || []
+            : ordersData
         );
+        
     } catch (err) {
-        console.error("Error fetching orders:", err);
+        // console.error("Error fetching orders:", err);
         setError(err.message || "Không thể tải đơn hàng");
     } finally {
         setIsLoading(false);

@@ -12,7 +12,6 @@ import {
   Dimensions,
 } from "react-native";
 
-
 import { Ionicons, FontAwesome, AntDesign } from "@expo/vector-icons";
 import {
   useNavigation,
@@ -25,6 +24,7 @@ import AddToCartButton from "../../components/AddToCardButton";
 import RentButton from "../../components/RentButton";
 import BuyNowButton from "../../components/BuyNowButton";
 import Comment from "../../components/ProductDetail/Comment";
+import ProductReviews from "../../components/ProductDetail/ProductReview";
 import LikeButton from "../../components/ProductDetail/LikeButton";
 import { checkQuantityProduct } from "../../services/warehouseService";
 
@@ -507,16 +507,6 @@ export default function ProductDetail() {
     }
   };
 
-  const handleSubmitReview = () => {
-    if (userRating === 0) {
-      Alert.alert("Lỗi", "Vui lòng chọn số sao đánh giá.");
-      return;
-    }
-    Alert.alert("Thành công", "Đánh giá của bạn đã được gửi");
-    setUserComment("");
-    setUserRating(0);
-  };
-
   const formatCurrency = (amount) => {
     return amount.toLocaleString("vi-vn");
   };
@@ -888,38 +878,11 @@ export default function ProductDetail() {
           )}
         </View>
       )}
-      {/* {item.type === "reviews" && (
+      {item.type === "reviews" && (
         <View>
-          <Text style={styles.sectionTitle}>Đánh giá & Nhận xét</Text>
-          <View style={styles.ratingContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => setUserRating(star)}>
-                <FontAwesome
-                  name={star <= userRating ? "star" : "star-o"}
-                  size={24}
-                  color={star <= userRating ? COLORS.secondary : COLORS.dark}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Nhập đánh giá của bạn..."
-              value={userComment}
-              onChangeText={setUserComment}
-              multiline
-              numberOfLines={3}
-            />
-            <TouchableOpacity
-              style={styles.commentSubmitButton}
-              onPress={handleSubmitReview}
-            >
-              <Text style={styles.commentSubmitText}>Gửi đánh giá</Text>
-            </TouchableOpacity>
-          </View>
+          <ProductReviews productCode={productCode} />
         </View>
-      )} */}
+      )}
       {item.type === "comments" && (
         <Comment
           productCode={productCode}
@@ -937,7 +900,7 @@ export default function ProductDetail() {
     // { type: "specifications" },
     { type: "promotions" },
     { type: "description" },
-    // { type: "reviews" },
+    { type: "reviews" },
     { type: "comments" },
   ];
 

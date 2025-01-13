@@ -14,6 +14,7 @@ import DeliveryAddress from "../Payment/DeliveryAddress";
 import AddressForm from "../Shipment/AddressForm";
 import { Ionicons } from "@expo/vector-icons";
 import { selectUser } from "../../redux/slices/authSlice";
+import { ActivityIndicator } from "react-native";
 
 const OrderMethod = ({
   userData,
@@ -27,9 +28,11 @@ const OrderMethod = ({
   const [branches, setBranches] = useState([]);
   const [branchStatus, setBranchStatus] = useState({});
   const user = useSelector(selectUser);
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     const loadBranchesWithStatus = async () => {
+      setIsLoading(true);
       try {
         const branchData = await fetchBranchs();
         setBranches(branchData);
@@ -77,6 +80,9 @@ const OrderMethod = ({
       } catch (error) {
         console.error("Error loading branches or availability:", error);
         Alert.alert("Error", "Unable to load branch data.");
+      }
+      finally {
+        setIsLoading(false);
       }
     };
 
@@ -131,23 +137,28 @@ const OrderMethod = ({
         </TouchableOpacity>
 
         {selectedOption === "STORE_PICKUP" && (
+        isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải danh sách chi nhánh...</Text>
+          </View>
+        ) : (
           <FlatList
             data={branches}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => {
               const branch = branchStatus[item.id];
+              const isDisabled = branch?.status === "Hết hàng";
 
               return (
                 <TouchableOpacity
                   style={[
                     styles.branchItem,
                     selectedBranchId === item.id && styles.selectedBranchItem,
-                    branch?.status === "Hết hàng" && styles.disabledBranchItem,
+                    isDisabled && styles.disabledBranchItem,
                   ]}
-                  onPress={() =>
-                    branch?.status !== "Hết hàng" && handleBranchChange(item.id)
-                  }
-                  disabled={branch?.status === "Hết hàng"}
+                  onPress={() => !isDisabled && handleBranchChange(item.id)}
+                  disabled={isDisabled}
                 >
                   <View style={styles.branchInfo}>
                     <Text style={styles.branchName}>{item.branchName}</Text>
@@ -167,20 +178,21 @@ const OrderMethod = ({
                       <View style={styles.productList}>
                         {branch.unavailableProducts.map((product, index) => (
                           <Text key={index} style={styles.productDetail}>
-                            {product.productName}: {product.availableQuantity}{" "}
+                            {product.productName}: {product.availableQuantity} sản phẩm có sẵn
                           </Text>
                         ))}
                       </View>
                     )}
                   </View>
                   {selectedBranchId === item.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#3366FF" />
+                    <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
                   )}
                 </TouchableOpacity>
               );
             }}
           />
-        )}
+        )
+      )}
       </View>
     </View>
   );
@@ -201,16 +213,14 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: COLORS.white,
     borderRadius: 8,
-    marginBottom: 16,
+    overflow: "auto"
   },
   title: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 16,
     color: COLORS.primary,
   },
   radioGroup: {
-    marginBottom: 16,
   },
   radioOption: {
     flexDirection: "row",
