@@ -50,7 +50,7 @@ export default function PlaceOrderScreen({ route }) {
   );
   const userLogin = useSelector(selectUser);
   const shipment = useSelector((state) => state.shipment || {});
-  const [isModalVisible, setIsModalVisible] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [branches, setBranches] = useState([]);
   const [shipments, setShipments] = useState([]);
   const [selectedOption, setSelectedOption] = useState("HOME_DELIVERY");
@@ -65,7 +65,7 @@ export default function PlaceOrderScreen({ route }) {
   const [isGuest, setIsGuest] = useState(false);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isLoadingShipmentData, setIsLoadingShipmentData] = useState(true);
-  console.log(isLoadingShipmentData);
+  // console.log(isLoadingShipmentData);
 
   const [userData, setUserData] = useState({
     fullName: "",
@@ -89,7 +89,6 @@ export default function PlaceOrderScreen({ route }) {
   useEffect(() => {
     const init = async () => {
       try {
-        setIsLoadingShipmentData(true);
         await checkLoginStatus();
         const token = await AsyncStorage.getItem("token");
         await fetchShipments(token);
@@ -112,10 +111,7 @@ export default function PlaceOrderScreen({ route }) {
         setShipments(shipmentData.$values || []);
       }
     } catch (error) {
-      console.error("Error fetching shipment data:", error);
-      Alert.alert("Error", "Unable to fetch delivery data.");
     } finally {
-      setIsLoadingShipmentData(false);
     }
   };
 
@@ -177,7 +173,10 @@ export default function PlaceOrderScreen({ route }) {
         const token = await AsyncStorage.getItem("token");
         const shipmentData = await getUserShipmentDetails(token);
         setShipments(shipmentData);
-        dispatch(setShipment(shipmentData[0]));
+
+        if (shipmentData.length > 0) {
+          dispatch(setShipment(shipmentData[0]));
+        }
       } catch (error) {
         // console.error("Error fetching branches or shipments:", error);
         // Alert.alert("Error", "Unable to fetch delivery data.");
@@ -234,21 +233,8 @@ export default function PlaceOrderScreen({ route }) {
     setDatePickerVisibility(false);
   };
 
-  const handleCancel = () => {
-    navigation.goBack();
-  };
-
   const renderCustomerInfo = () => {
-    // if (isLoadingShipmentData) {
-    //   return (
-    //     <View style={styles.loadingContainer}>
-    //       <ActivityIndicator size="large" color={COLORS.primary} />
-    //       <Text style={styles.loadingText}>
-    //         Đang tải thông tin giao hàng...
-    //       </Text>
-    //     </View>
-    //   );
-    // }
+
     if (isGuest) {
       return (
         <View style={styles.sectionContainer}>
@@ -383,15 +369,13 @@ export default function PlaceOrderScreen({ route }) {
                   Chưa có địa chỉ nào được chọn.
                 </Text>
               )}
-              <TouchableOpacity
-                style={styles.changeAddressButton}
-                onPress={() => {
-                  if (shipments.length > 0) {
-                    setIsModalVisible(true);
-                  } else {
-                  }
-                }}
-              >
+             <TouchableOpacity
+  style={styles.changeAddressButton}
+  onPress={() => {
+    setIsModalVisible(true); // Hiển thị modal trước.
+
+  }}
+>
                 <Text style={styles.changeAddressText}>
                   {userData.shipmentDetailID
                     ? "Chọn địa chỉ khác"
@@ -631,58 +615,44 @@ export default function PlaceOrderScreen({ route }) {
         contentContainerStyle={styles.sectionListContent}
       />
 
-      {!isLoadingShipmentData ? (
-              <Modal
-              visible={isModalVisible}
-              animationType="slide"
-              transparent={true}
-              onRequestClose={() => setIsModalVisible(false)}
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chọn địa chỉ giao hàng</Text>
+
+            <FlatList
+              data={shipments}
+              keyExtractor={(item) => item.id?.toString() || ""}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.addressItem,
+                    shipment?.id === item.id && styles.selectedAddress,
+                  ]}
+                  onPress={() => handleSelectShipment(item)}
+                >
+                  <Text style={styles.addressName}>{item.fullName}</Text>
+                  <Text style={styles.addressText}>{item.address}</Text>
+                  <Text style={styles.addressText}>{item.phoneNumber}</Text>
+                  <Text style={styles.selectedText}>{item.email}</Text>
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsModalVisible(false)}
             >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Chọn địa chỉ giao hàng</Text>
-    
-                  <FlatList
-                    data={shipments}
-                    keyExtractor={(item) => item.id?.toString() || ""}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={[
-                          styles.addressItem,
-                          shipment?.id === item.id && styles.selectedAddress,
-                        ]}
-                        onPress={() => handleSelectShipment(item)}
-                      >
-                        <Text style={styles.addressName}>{item.fullName}</Text>
-                        <Text style={styles.addressText}>{item.address}</Text>
-                        <Text style={styles.addressText}>{item.phoneNumber}</Text>
-                        <Text style={styles.selectedText}>{item.email}</Text>
-                      </TouchableOpacity>
-                    )}
-                  />
-    
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setIsModalVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>Đóng</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-      ) : (
-<Modal
-          visible={isModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Đang tải...</Text>
+              <Text style={styles.closeButtonText}>Đóng</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
-      )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1022,7 +992,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: COLORS.white,
-    fontSize: 14, // Giảm kích thước chữ
+    fontSize: 14,
     fontWeight: "bold",
   },
 });

@@ -209,7 +209,7 @@ function SelectPayment({ route }) {
 
     try {
       if (order.saleOrderCode) {
-        console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
+        // console.log(`Cancelling sale order ${order.id} with reason: ${reason}`);
         const response = await axios.post(
           `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/request-cancel/${
             order.id
@@ -294,7 +294,7 @@ function SelectPayment({ route }) {
           try {
             const newStatus = 5;
             if (order.saleOrderCode) {
-              console.log(`update sale order ${order.id}`);
+              // console.log(`update sale order ${order.id}`);
               const response = await axios.put(
                 `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/SaleOrder/update-order-status/${order.id}?status=${newStatus}`,
                 null, // No request body
@@ -305,7 +305,7 @@ function SelectPayment({ route }) {
                 }
               );
             } else if (order.rentalOrderCode) {
-              console.log(`update sale order ${order.id}`);
+              // console.log(`update sale order ${order.id}`);
               const response = await axios.put(
                 `https://twosport-api-offcial-685025377967.asia-southeast1.run.app/api/RentalOrder/update-rental-order-status/${order.id}?orderStatus=${newStatus}`,
                 null, // No request body
@@ -397,10 +397,10 @@ function SelectPayment({ route }) {
 
       if (response.data.isSuccess) {
         setExtendedShowModal(false);
-        console.log("Request successful:", response);
+        // console.log("Request successful:", response);
         alert("Extension requested successfully!");
       } else {
-        console.log("Error response:", response.data.message);
+        // console.log("Error response:", response.data.message);
         alert(response.data.message);
       }
     } catch (error) {

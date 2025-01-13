@@ -12,14 +12,14 @@ const OrderSuccessScreen = ({ route }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
 
-  console.log("Navigating to SelectPayment with order:", {
-    id,
-    saleOrderCode,
-    rentalOrderCode,
-    totalAmount: order?.saleCosts?.totalAmount || order?.rentalCosts?.totalAmount,
-    tranSportFee: order?.tranSportFee || 0,
-    ...order, 
-  });
+  // console.log("Navigating to SelectPayment with order:", {
+  //   id,
+  //   saleOrderCode,
+  //   rentalOrderCode,
+  //   totalAmount: order?.saleCosts?.totalAmount || order?.rentalCosts?.totalAmount,
+  //   tranSportFee: order?.tranSportFee || 0,
+  //   ...order, 
+  // });
 
   useEffect(() => {
     Animated.parallel([

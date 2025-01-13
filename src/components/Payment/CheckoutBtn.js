@@ -94,7 +94,7 @@ const CheckoutBtn = ({
     const dateOfReceipt = new Date(today);
     dateOfReceipt.setDate(today.getDate() + 3);
 
-    console.log("check", selectedCartItems);
+    // console.log("check", selectedCartItems);
 
     const totalAmount = _selectedCartItems.reduce(
       (acc, item) =>
@@ -104,7 +104,7 @@ const CheckoutBtn = ({
           : item.rentPrice * item.quantity * (item?.dateSelected?.count || 1)),
       0
     );
-    console.log(_selectedCartItems);
+    // console.log(_selectedCartItems);
     const orderData = {
       customerInformation: {
         ...userData,
@@ -159,7 +159,7 @@ const CheckoutBtn = ({
             },
           }),
     };
-    console.log(orderData);
+    // console.log(orderData);
 
     try {
       const response =

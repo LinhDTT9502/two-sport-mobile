@@ -86,7 +86,7 @@ export default function Checkout({ route }) {
   const fetchShipments = async () => {
     try {
       setIsLoading(true);
-      console.log(isLoading);
+      // console.log(isLoading);
 
       const token = await AsyncStorage.getItem("token");
       const shipmentData = await getUserShipmentDetails(token);
@@ -100,7 +100,7 @@ export default function Checkout({ route }) {
     }
   };
 
-  console.log(shipments);
+  // console.log(shipments);
 
 
   useEffect(() => {

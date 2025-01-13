@@ -24,7 +24,7 @@ export const selectCheckout = (data) => {
 };
 
 export const selectRentalCheckout = (data) => {
-  console.log(data);
+  // console.log(data);
   
   return axios.post(`${API_BASE_URL_CHECK}/checkout-rental-order`, data, {
     headers: {

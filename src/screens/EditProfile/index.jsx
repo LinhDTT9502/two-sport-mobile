@@ -265,7 +265,7 @@ export default function EditProfile() {
 
     try {
       const data = await sendOtpForEmailChangeService(user.UserId, newEmail);
-      console.log(data)
+      // console.log(data)
 
       setToken(data.token);
       setOtpSent(true);
